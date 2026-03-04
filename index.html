@@ -19,30 +19,56 @@
         }
 
         :root {
-            --bg1: #0a1628;
-            --bg2: #111d33;
-            --bg3: rgba(22, 32, 64, 0.7);
-            --gold: #c8a45a;
-            --gold-l: #e8c97a;
-            --gold-d: #a0833a;
-            --gold-glow: rgba(200, 164, 90, 0.2);
-            --txt: #f0f0f0;
-            --txt2: #a0aec0;
-            --txt3: #6b7a90;
-            --border: rgba(200, 164, 90, 0.15);
+            /* Color palette based on the business card */
+            --bg-base: #141b23;
+            /* Very dark navy base */
+            --bg-grid: #1a232f;
+            /* Slightly lighter navy for grid lines */
+            --bg-pane: rgba(20, 27, 35, 0.85);
+            /* Semi-transparent panel background */
+            --gold-bright: #e7c27d;
+            /* Bright gold for text/accents */
+            --gold-base: #c19b5b;
+            /* Standard gold */
+            --gold-dim: #997a47;
+            /* Dimmer gold */
+            --gold-glow: rgba(231, 194, 125, 0.15);
+            --txt-main: #d1d5db;
+            /* Light gray text */
+            --txt-dim: #9ca3af;
+            /* Dim gray text */
+            --border-gold: rgba(193, 155, 91, 0.3);
+
+            /* Legacy variables mapped to new palette to minimize breaking changes */
+            --bg1: var(--bg-base);
+            --bg2: var(--bg-pane);
+            --bg3: rgba(20, 27, 35, 0.6);
+            --gold: var(--gold-base);
+            --gold-l: var(--gold-bright);
+            --gold-d: var(--gold-dim);
+            --txt: var(--txt-main);
+            --txt2: var(--txt-dim);
+            --txt3: #6b7280;
+            --border: var(--border-gold);
+
             --radius: 12px;
             --radius-lg: 16px;
             --success: #4ade80;
             --warning: #fbbf24;
             --danger: #f87171;
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4)
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5)
         }
 
         html,
         body {
             height: 100%;
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            background: var(--bg1);
+            font-family: 'Outfit', 'Pretendard', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-base);
+            /* Creating the grid pattern from the business card */
+            background-image:
+                linear-gradient(var(--bg-grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+            background-size: 40px 40px;
             color: var(--txt);
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased
@@ -52,7 +78,7 @@
             content: '';
             position: fixed;
             inset: 0;
-            background: radial-gradient(ellipse at 30% 10%, rgba(200, 164, 90, 0.06), transparent 60%), radial-gradient(ellipse at 70% 90%, rgba(200, 164, 90, 0.03), transparent 50%);
+            background: radial-gradient(circle at 50% 30%, rgba(193, 155, 91, 0.08), transparent 60%);
             pointer-events: none;
             z-index: 0
         }
@@ -62,7 +88,9 @@
             margin: 0 auto;
             min-height: 100vh;
             position: relative;
-            z-index: 1
+            z-index: 1;
+            background: linear-gradient(180deg, rgba(20, 27, 35, 0.7) 0%, rgba(20, 27, 35, 1) 30%);
+            /* Fade out the grid slightly at the bottom */
         }
 
         .screen {
@@ -135,7 +163,7 @@
 
         /* Header */
         .header {
-            padding: 20px 0 10px;
+            padding: 30px 20px 20px;
             text-align: center;
             position: relative
         }
@@ -144,8 +172,76 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            margin-bottom: 4px
+            gap: 16px;
+            margin-bottom: 8px
+        }
+
+        .logo-img {
+            height: 60px;
+            /* Make logo font prominent */
+            object-fit: contain;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .title {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--gold-l)
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--txt);
+            letter-spacing: 1px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .promo-list {
+            text-align: left;
+            margin: 24px 0 32px;
+            padding: 0 10px;
+        }
+
+        .promo-item {
+            font-size: 14px;
+            color: #d1d5db;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            padding-left: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .promo-item::before {
+            content: '-';
+            position: absolute;
+            left: 0;
+            color: var(--txt-dim);
+        }
+
+        .contact-info {
+            font-size: 20px;
+            color: var(--gold-l);
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: left;
+            padding: 0 10px;
+            letter-spacing: 1.5px;
+        }
+
+        .car-graphic {
+            width: 100%;
+            height: auto;
+            margin-top: 20px;
+            opacity: 0.9;
         }
 
         .logo-svg {
@@ -1097,306 +1193,314 @@
 </head>
 
 <body>
-    <div class="app" id="app">
-
-        <!-- ========== Screen 1: Main / Calendar ========== -->
-        <div class="screen active" id="screen-main">
-            <div class="header">
+    <!-- APP -->
+    <div class="app">
+        <!-- ==================== MAIN SCREEN ==================== -->
+        <div id="screen-main" class="screen active">
+            <header class="header">
                 <div class="logo-area">
-                    <svg class="logo-svg" viewBox="0 0 52 44">
-                        <defs>
-                            <linearGradient id="gGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#e8c97a" />
-                                <stop offset="100%" stop-color="#c8a45a" />
-                            </linearGradient>
-                            <pattern id="stripes" patternUnits="userSpaceOnUse" width="100" height="5">
-                                <line x1="0" y1="1" x2="100" y2="1" stroke="#c8a45a" stroke-width="2.2" />
-                            </pattern>
-                            <mask id="tm"><text x="2" y="36" font-family="Outfit" font-weight="800" font-size="42"
-                                    fill="white" letter-spacing="-2">YJ</text></mask>
-                        </defs>
-                        <rect width="52" height="44" fill="url(#stripes)" mask="url(#tm)" />
-                        <text x="2" y="36" font-family="Outfit" font-weight="800" font-size="42" fill="none"
-                            stroke="url(#gGold)" stroke-width="0.8" letter-spacing="-2">YJ</text>
                     </svg>
                     <div>
                         <div class="brand-name">YJ CAR CARRIER</div>
                     </div>
                 </div>
                 <div class="brand-sub">차량 운송 전문업체</div>
-            </div>
+            </header>
+            <!-- Stylized Car Outline mimicking the graphic -->
+            <svg viewBox="0 0 400 150"
+                style="width: 100%; height: auto; margin-bottom: 40px; opacity: 0.8; transform: scaleX(-1); /* image has car facing right, original SVG faced left */">
+                <path
+                    d="M 120 100 C 130 90, 180 60, 240 60 C 280 60, 320 70, 360 90 C 370 100, 380 95, 390 90 C 350 70, 300 40, 230 40 C 170 40, 120 60, 80 100"
+                    fill="none" stroke="var(--gold-l)" stroke-width="3" stroke-linecap="round" />
+                <path d="M 230 40 C 200 30, 180 35, 150 50" fill="none" stroke="var(--gold-l)" stroke-width="3"
+                    stroke-linecap="round" />
+                <path d="M 330 75 C 310 70, 280 65, 250 65" fill="none" stroke="var(--gold-l)" stroke-width="2"
+                    stroke-linecap="round" />
+                <circle cx="130" cy="110" r="25" fill="none" stroke="var(--gold-l)" stroke-width="5" />
+                <circle cx="330" cy="110" r="25" fill="none" stroke="var(--gold-l)" stroke-width="5" />
+                <!-- Wheel details -->
+                <path d="M 130 90 L 130 130 M 110 110 L 150 110 M 116 96 L 144 124 M 116 124 L 144 96"
+                    stroke="var(--gold-l)" stroke-width="2" />
+                <path d="M 330 90 L 330 130 M 310 110 L 350 110 M 316 96 L 344 124 M 316 124 L 344 96"
+                    stroke="var(--gold-l)" stroke-width="2" />
+                <path d="M 50 110 L 100 110 M 160 110 L 300 110 M 360 110 L 390 110" stroke="var(--gold-l)"
+                    stroke-width="3" stroke-linecap="round" />
+            </svg>
 
+            <button class="btn btn-primary"
+                style="width:100%; padding: 18px; font-size: 16px; font-weight: 700; letter-spacing: 1px; border-radius: var(--radius-lg); margin-bottom: 20px; box-shadow: 0 10px 30px rgba(193, 155, 91, 0.4);"
+                onclick="handleStartBooking()">
+                탁 송 예 약 하 기
+            </button>
+            <button class="btn btn-ghost" style="margin-top: auto; padding-bottom: 20px;"
+                onclick="showScreen('screen-admin-login')">관리자 모드</button>
+        </div>
+
+        <div class="cal-wrap">
+            <div class="cal-header">
+                <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+                <span class="cal-title" id="calTitle"></span>
+                <button class="cal-nav" onclick="changeMonth(1)">›</button>
+            </div>
+            <div class="cal-days" id="calDays">
+                <span class="cal-day-label">일</span><span class="cal-day-label">월</span><span
+                    class="cal-day-label">화</span><span class="cal-day-label">수</span><span
+                    class="cal-day-label">목</span><span class="cal-day-label">금</span><span
+                    class="cal-day-label">토</span>
+            </div>
+            <div class="cal-days" id="calGrid"></div>
+        </div>
+
+        <div class="features">
+            <span class="feature-tag">합리적인 금액</span>
+            <span class="feature-tag">적재물 보험 가입</span>
+            <span class="feature-tag">전국 네트워크망</span>
+            <span class="feature-tag">카드·현금영수증·세금계산서</span>
+        </div>
+    </div>
+
+    <!-- ========== Screen 2: Transport Info ========== -->
+    <div class="screen" id="screen-transport">
+        <div class="top-bar"><button class="back-btn" onclick="goStep(1)">‹ 이전</button><span class="top-title">운송
+                정보</span><span></span></div>
+        <div class="step-bar"><span class="step-dot done"></span><span class="step-line done"></span><span
+                class="step-dot active"></span><span class="step-line"></span><span class="step-dot"></span></div>
+
+        <div class="card">
+            <div class="info-row"><span class="label">📅 상차일</span><span class="value" id="dispDate"></span></div>
+        </div>
+
+        <div class="section-title"><span class="icon">🚛</span> 차량 대수</div>
+        <div class="toggle-group" id="carCountToggle">
+            <button class="toggle-btn active" data-count="1" onclick="setCarCount(1)">1대 운송</button>
+            <button class="toggle-btn" data-count="2" onclick="setCarCount(2)">2대 운송</button>
+        </div>
+        <p id="discountNote" style="font-size:11px;color:var(--success);margin-top:6px;display:none">💰 2대 동시 운송 시
+            10% 할인 적용!</p>
+
+        <div class="section-title"><span class="icon">📍</span> 상차지 (출발지)</div>
+        <div class="addr-wrap">
+            <input class="input-field" id="addrFrom" placeholder="도로명, 지번, 건물명으로 검색" autocomplete="off"
+                oninput="debounceSearch(this,'from')">
+            <div class="addr-dropdown" id="dropFrom"></div>
+        </div>
+
+        <div class="section-title"><span class="icon">📍</span> 하차지 (도착지)</div>
+        <div class="addr-wrap">
+            <input class="input-field" id="addrTo" placeholder="도로명, 지번, 건물명으로 검색" autocomplete="off"
+                oninput="debounceSearch(this,'to')">
+            <div class="addr-dropdown" id="dropTo"></div>
+        </div>
+
+        <div class="loading" id="distLoading">
+            <div class="spinner"></div>거리 계산 중...
+        </div>
+
+        <div id="priceSection" style="display:none">
+            <div class="price-box">
+                <div class="price-label">예상 운송 요금</div>
+                <div class="price-amount" id="priceDisplay">₩0</div>
+                <div class="price-detail" id="priceDetail"></div>
+                <div id="discountBadge" class="discount-badge" style="display:none">2대 할인 -10%</div>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            <button class="btn btn-primary" style="width:100%" id="btnNext2" disabled onclick="goStep(3)">다음
+                단계</button>
+        </div>
+    </div>
+
+    <!-- ========== Screen 3: Booking Details ========== -->
+    <div class="screen" id="screen-booking">
+        <div class="top-bar"><button class="back-btn" onclick="goStep(2)">‹ 이전</button><span class="top-title">예약
+                상세</span><span></span></div>
+        <div class="step-bar"><span class="step-dot done"></span><span class="step-line done"></span><span
+                class="step-dot done"></span><span class="step-line done"></span><span class="step-dot active"></span>
+        </div>
+
+        <div class="card" id="bookingSummary"></div>
+
+        <div class="section-title"><span class="icon">🕐</span> 상차 시간</div>
+        <div class="input-group"><label class="input-label">희망 상차 시간 *</label><input class="input-field" id="pickupTime"
+                type="time" value="09:00"></div>
+
+        <div class="section-title"><span class="icon">🚘</span> 차량 정보</div>
+        <div class="input-group"><label class="input-label">차종 *</label><input class="input-field" id="vehicleType"
+                placeholder="예: 승용차, SUV, 카라반, 슈퍼카, 중장비"></div>
+        <div class="input-group"><label class="input-label">차량 번호 *</label><input class="input-field" id="plateNum"
+                placeholder="예: 12가 3456"></div>
+        <div class="input-group"><label class="input-label">차대번호 (VIN)</label><input class="input-field" id="vinNum"
+                placeholder="차대번호 입력 (선택)"></div>
+
+        <div class="section-title"><span class="icon">👤</span> 고객 정보</div>
+        <div class="input-group"><label class="input-label">이름 *</label><input class="input-field" id="custName"
+                placeholder="이름 입력"></div>
+        <div class="input-group"><label class="input-label">연락처 *</label><input class="input-field" id="custPhone"
+                type="tel" placeholder="010-0000-0000" oninput="formatPhone(this)"></div>
+
+        <div class="section-title"><span class="icon">💳</span> 결제 수단</div>
+        <div class="chip-group" id="payChips">
+            <button class="chip" data-pay="카드" onclick="selectPay(this)">카드</button>
+            <button class="chip" data-pay="현금영수증" onclick="selectPay(this)">현금영수증</button>
+            <button class="chip" data-pay="세금계산서" onclick="selectPay(this)">세금계산서</button>
+            <button class="chip" data-pay="현금" onclick="selectPay(this)">현금</button>
+        </div>
+
+        <div class="section-title"><span class="icon">📝</span> 메모</div>
+        <div class="input-group"><textarea class="input-field" id="memo" placeholder="특이사항이 있으면 입력해 주세요"></textarea>
+        </div>
+
+        <div class="bottom-bar">
+            <button class="btn btn-primary" style="width:100%" onclick="submitBooking()">예약 신청</button>
+        </div>
+    </div>
+
+    <!-- ========== Screen 4: Booking Complete ========== -->
+    <div class="screen" id="screen-complete">
+        <div class="success-icon"><svg viewBox="0 0 40 40" fill="none">
+                <path d="M10 20 L17 27 L30 13" stroke="#0a1628" stroke-width="3.5" stroke-linecap="round"
+                    stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="100"
+                    style="animation:drawCheck .6s .3s ease forwards" />
+            </svg></div>
+        <div class="success-title">예약이 접수되었습니다</div>
+        <div class="success-sub">관리자 확인 후 승인 안내 드리겠습니다</div>
+
+        <div class="card" id="completeSummary"></div>
+
+        <a href="tel:01044430032" class="contact-link">📞 담당자 연락 010.4443.0032</a>
+
+        <div class="features" style="margin-top:16px">
+            <span class="feature-tag">합리적인 금액</span>
+            <span class="feature-tag">적재물 보험 가입</span>
+            <span class="feature-tag">다양한 차량 운송</span>
+            <span class="feature-tag">보세운송차량 등록</span>
+            <span class="feature-tag">실시간 배차</span>
+        </div>
+
+        <div class="bottom-bar">
+            <button class="btn btn-primary" style="width:100%" onclick="resetBooking()">새 예약하기</button>
+        </div>
+    </div>
+
+    <!-- ========== Admin Login ========== -->
+    <div class="screen" id="screen-admin-login">
+        <div class="top-bar"><button class="back-btn" onclick="showScreen('screen-main')">‹
+                돌아가기</button><span></span><span></span></div>
+        <div class="admin-login-box">
+            <svg class="logo-svg" viewBox="0 0 52 44" style="display:block">
+                <use href="#tm" fill="url(#stripes)" />
+                <rect width="52" height="44" fill="url(#stripes)" mask="url(#tm)" />
+                <text x="2" y="36" font-family="Outfit" font-weight="800" font-size="42" fill="none"
+                    stroke="url(#gGold)" stroke-width="0.8" letter-spacing="-2">YJ</text>
+            </svg>
+            <h2 style="color:var(--gold-l);font-size:18px;margin-bottom:24px">관리자 로그인</h2>
+            <div class="input-group"><input class="input-field" id="adminPw" type="password" placeholder="비밀번호 입력"
+                    style="text-align:center" onkeydown="if(event.key==='Enter')adminLogin()"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">로그인</button>
+        </div>
+    </div>
+
+    <!-- ========== Admin Dashboard ========== -->
+    <div class="screen" id="screen-admin">
+        <div class="top-bar"><button class="back-btn" onclick="adminLogout()">‹ 로그아웃</button><span
+                class="top-title">관리자</span><span></span></div>
+        <div class="admin-tabs">
+            <div class="admin-tab active" data-tab="tab-bookings" onclick="switchTab(this)">📋 예약</div>
+            <div class="admin-tab" data-tab="tab-holidays" onclick="switchTab(this)">📅 휴무</div>
+            <div class="admin-tab" data-tab="tab-settings" onclick="switchTab(this)">💰 요금</div>
+        </div>
+
+        <!-- Bookings Tab -->
+        <div class="tab-pane active" id="tab-bookings">
+            <div class="filter-bar" id="filterBar">
+                <button class="filter-chip active" data-filter="all" onclick="filterBookings(this)">전체</button>
+                <button class="filter-chip" data-filter="pending" onclick="filterBookings(this)">⏳ 대기</button>
+                <button class="filter-chip" data-filter="approved" onclick="filterBookings(this)">✅ 승인</button>
+                <button class="filter-chip" data-filter="rejected" onclick="filterBookings(this)">❌ 거절</button>
+            </div>
+            <div id="bookingsList"></div>
+        </div>
+
+        <!-- Holidays Tab -->
+        <div class="tab-pane" id="tab-holidays">
             <div class="cal-wrap">
                 <div class="cal-header">
-                    <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
-                    <span class="cal-title" id="calTitle"></span>
-                    <button class="cal-nav" onclick="changeMonth(1)">›</button>
+                    <button class="cal-nav" onclick="changeAdminMonth(-1)">‹</button>
+                    <span class="cal-title" id="adminCalTitle"></span>
+                    <button class="cal-nav" onclick="changeAdminMonth(1)">›</button>
                 </div>
-                <div class="cal-days" id="calDays">
-                    <span class="cal-day-label">일</span><span class="cal-day-label">월</span><span
+                <div class="cal-days"><span class="cal-day-label">일</span><span class="cal-day-label">월</span><span
                         class="cal-day-label">화</span><span class="cal-day-label">수</span><span
                         class="cal-day-label">목</span><span class="cal-day-label">금</span><span
-                        class="cal-day-label">토</span>
+                        class="cal-day-label">토</span></div>
+                <div class="cal-days" id="adminCalGrid"></div>
+            </div>
+            <p style="font-size:12px;color:var(--txt3);text-align:center;margin-top:10px">날짜를 클릭하여 휴무일을 설정/해제합니다</p>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-pane" id="tab-settings">
+            <div class="settings-section">
+                <h3>💰 요금 계산 방식</h3>
+                <div class="toggle-group" id="priceModeToggle" style="margin-bottom:12px">
+                    <button class="toggle-btn active" data-mode="table" onclick="setPriceMode('table')">요금표
+                        기준</button>
+                    <button class="toggle-btn" data-mode="custom" onclick="setPriceMode('custom')">직접 설정</button>
                 </div>
-                <div class="cal-days" id="calGrid"></div>
-            </div>
-
-            <div class="bottom-bar">
-                <button class="btn btn-primary" style="width:100%" id="btnNext1" disabled onclick="goStep(2)">날짜를 선택해
-                    주세요</button>
-                <div class="admin-link"><button onclick="showScreen('screen-admin-login')">🔒 관리자</button></div>
-            </div>
-
-            <div class="features">
-                <span class="feature-tag">합리적인 금액</span>
-                <span class="feature-tag">적재물 보험 가입</span>
-                <span class="feature-tag">전국 네트워크망</span>
-                <span class="feature-tag">카드·현금영수증·세금계산서</span>
-            </div>
-        </div>
-
-        <!-- ========== Screen 2: Transport Info ========== -->
-        <div class="screen" id="screen-transport">
-            <div class="top-bar"><button class="back-btn" onclick="goStep(1)">‹ 이전</button><span class="top-title">운송
-                    정보</span><span></span></div>
-            <div class="step-bar"><span class="step-dot done"></span><span class="step-line done"></span><span
-                    class="step-dot active"></span><span class="step-line"></span><span class="step-dot"></span></div>
-
-            <div class="card">
-                <div class="info-row"><span class="label">📅 상차일</span><span class="value" id="dispDate"></span></div>
-            </div>
-
-            <div class="section-title"><span class="icon">🚛</span> 차량 대수</div>
-            <div class="toggle-group" id="carCountToggle">
-                <button class="toggle-btn active" data-count="1" onclick="setCarCount(1)">1대 운송</button>
-                <button class="toggle-btn" data-count="2" onclick="setCarCount(2)">2대 운송</button>
-            </div>
-            <p id="discountNote" style="font-size:11px;color:var(--success);margin-top:6px;display:none">💰 2대 동시 운송 시
-                10% 할인 적용!</p>
-
-            <div class="section-title"><span class="icon">📍</span> 상차지 (출발지)</div>
-            <div class="addr-wrap">
-                <input class="input-field" id="addrFrom" placeholder="도로명, 지번, 건물명으로 검색" autocomplete="off"
-                    oninput="debounceSearch(this,'from')">
-                <div class="addr-dropdown" id="dropFrom"></div>
-            </div>
-
-            <div class="section-title"><span class="icon">📍</span> 하차지 (도착지)</div>
-            <div class="addr-wrap">
-                <input class="input-field" id="addrTo" placeholder="도로명, 지번, 건물명으로 검색" autocomplete="off"
-                    oninput="debounceSearch(this,'to')">
-                <div class="addr-dropdown" id="dropTo"></div>
-            </div>
-
-            <div class="loading" id="distLoading">
-                <div class="spinner"></div>거리 계산 중...
-            </div>
-
-            <div id="priceSection" style="display:none">
-                <div class="price-box">
-                    <div class="price-label">예상 운송 요금</div>
-                    <div class="price-amount" id="priceDisplay">₩0</div>
-                    <div class="price-detail" id="priceDetail"></div>
-                    <div id="discountBadge" class="discount-badge" style="display:none">2대 할인 -10%</div>
-                </div>
-            </div>
-
-            <div class="bottom-bar">
-                <button class="btn btn-primary" style="width:100%" id="btnNext2" disabled onclick="goStep(3)">다음
-                    단계</button>
-            </div>
-        </div>
-
-        <!-- ========== Screen 3: Booking Details ========== -->
-        <div class="screen" id="screen-booking">
-            <div class="top-bar"><button class="back-btn" onclick="goStep(2)">‹ 이전</button><span class="top-title">예약
-                    상세</span><span></span></div>
-            <div class="step-bar"><span class="step-dot done"></span><span class="step-line done"></span><span
-                    class="step-dot done"></span><span class="step-line done"></span><span
-                    class="step-dot active"></span></div>
-
-            <div class="card" id="bookingSummary"></div>
-
-            <div class="section-title"><span class="icon">🕐</span> 상차 시간</div>
-            <div class="input-group"><label class="input-label">희망 상차 시간 *</label><input class="input-field"
-                    id="pickupTime" type="time" value="09:00"></div>
-
-            <div class="section-title"><span class="icon">🚘</span> 차량 정보</div>
-            <div class="input-group"><label class="input-label">차종 *</label><input class="input-field" id="vehicleType"
-                    placeholder="예: 승용차, SUV, 카라반, 슈퍼카, 중장비"></div>
-            <div class="input-group"><label class="input-label">차량 번호 *</label><input class="input-field" id="plateNum"
-                    placeholder="예: 12가 3456"></div>
-            <div class="input-group"><label class="input-label">차대번호 (VIN)</label><input class="input-field" id="vinNum"
-                    placeholder="차대번호 입력 (선택)"></div>
-
-            <div class="section-title"><span class="icon">👤</span> 고객 정보</div>
-            <div class="input-group"><label class="input-label">이름 *</label><input class="input-field" id="custName"
-                    placeholder="이름 입력"></div>
-            <div class="input-group"><label class="input-label">연락처 *</label><input class="input-field" id="custPhone"
-                    type="tel" placeholder="010-0000-0000" oninput="formatPhone(this)"></div>
-
-            <div class="section-title"><span class="icon">💳</span> 결제 수단</div>
-            <div class="chip-group" id="payChips">
-                <button class="chip" data-pay="카드" onclick="selectPay(this)">카드</button>
-                <button class="chip" data-pay="현금영수증" onclick="selectPay(this)">현금영수증</button>
-                <button class="chip" data-pay="세금계산서" onclick="selectPay(this)">세금계산서</button>
-                <button class="chip" data-pay="현금" onclick="selectPay(this)">현금</button>
-            </div>
-
-            <div class="section-title"><span class="icon">📝</span> 메모</div>
-            <div class="input-group"><textarea class="input-field" id="memo" placeholder="특이사항이 있으면 입력해 주세요"></textarea>
-            </div>
-
-            <div class="bottom-bar">
-                <button class="btn btn-primary" style="width:100%" onclick="submitBooking()">예약 신청</button>
-            </div>
-        </div>
-
-        <!-- ========== Screen 4: Booking Complete ========== -->
-        <div class="screen" id="screen-complete">
-            <div class="success-icon"><svg viewBox="0 0 40 40" fill="none">
-                    <path d="M10 20 L17 27 L30 13" stroke="#0a1628" stroke-width="3.5" stroke-linecap="round"
-                        stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="100"
-                        style="animation:drawCheck .6s .3s ease forwards" />
-                </svg></div>
-            <div class="success-title">예약이 접수되었습니다</div>
-            <div class="success-sub">관리자 확인 후 승인 안내 드리겠습니다</div>
-
-            <div class="card" id="completeSummary"></div>
-
-            <a href="tel:01044430032" class="contact-link">📞 담당자 연락 010.4443.0032</a>
-
-            <div class="features" style="margin-top:16px">
-                <span class="feature-tag">합리적인 금액</span>
-                <span class="feature-tag">적재물 보험 가입</span>
-                <span class="feature-tag">다양한 차량 운송</span>
-                <span class="feature-tag">보세운송차량 등록</span>
-                <span class="feature-tag">실시간 배차</span>
-            </div>
-
-            <div class="bottom-bar">
-                <button class="btn btn-primary" style="width:100%" onclick="resetBooking()">새 예약하기</button>
-            </div>
-        </div>
-
-        <!-- ========== Admin Login ========== -->
-        <div class="screen" id="screen-admin-login">
-            <div class="top-bar"><button class="back-btn" onclick="showScreen('screen-main')">‹
-                    돌아가기</button><span></span><span></span></div>
-            <div class="admin-login-box">
-                <svg class="logo-svg" viewBox="0 0 52 44" style="display:block">
-                    <use href="#tm" fill="url(#stripes)" />
-                    <rect width="52" height="44" fill="url(#stripes)" mask="url(#tm)" />
-                    <text x="2" y="36" font-family="Outfit" font-weight="800" font-size="42" fill="none"
-                        stroke="url(#gGold)" stroke-width="0.8" letter-spacing="-2">YJ</text>
-                </svg>
-                <h2 style="color:var(--gold-l);font-size:18px;margin-bottom:24px">관리자 로그인</h2>
-                <div class="input-group"><input class="input-field" id="adminPw" type="password" placeholder="비밀번호 입력"
-                        style="text-align:center" onkeydown="if(event.key==='Enter')adminLogin()"></div>
-                <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">로그인</button>
-            </div>
-        </div>
-
-        <!-- ========== Admin Dashboard ========== -->
-        <div class="screen" id="screen-admin">
-            <div class="top-bar"><button class="back-btn" onclick="adminLogout()">‹ 로그아웃</button><span
-                    class="top-title">관리자</span><span></span></div>
-            <div class="admin-tabs">
-                <div class="admin-tab active" data-tab="tab-bookings" onclick="switchTab(this)">📋 예약</div>
-                <div class="admin-tab" data-tab="tab-holidays" onclick="switchTab(this)">📅 휴무</div>
-                <div class="admin-tab" data-tab="tab-settings" onclick="switchTab(this)">💰 요금</div>
-            </div>
-
-            <!-- Bookings Tab -->
-            <div class="tab-pane active" id="tab-bookings">
-                <div class="filter-bar" id="filterBar">
-                    <button class="filter-chip active" data-filter="all" onclick="filterBookings(this)">전체</button>
-                    <button class="filter-chip" data-filter="pending" onclick="filterBookings(this)">⏳ 대기</button>
-                    <button class="filter-chip" data-filter="approved" onclick="filterBookings(this)">✅ 승인</button>
-                    <button class="filter-chip" data-filter="rejected" onclick="filterBookings(this)">❌ 거절</button>
-                </div>
-                <div id="bookingsList"></div>
-            </div>
-
-            <!-- Holidays Tab -->
-            <div class="tab-pane" id="tab-holidays">
-                <div class="cal-wrap">
-                    <div class="cal-header">
-                        <button class="cal-nav" onclick="changeAdminMonth(-1)">‹</button>
-                        <span class="cal-title" id="adminCalTitle"></span>
-                        <button class="cal-nav" onclick="changeAdminMonth(1)">›</button>
+                <div id="customPriceFields" style="display:none">
+                    <div class="input-group"><label class="input-label">기본료 (원)</label><input class="input-field"
+                            id="setBaseFee" type="number" placeholder="0"></div>
+                    <div class="settings-row">
+                        <div class="input-group"><label class="input-label">km당 단가 (1대)</label><input
+                                class="input-field" id="setRate1" type="number" placeholder="1000"></div>
+                        <div class="input-group"><label class="input-label">km당 단가 (2대)</label><input
+                                class="input-field" id="setRate2" type="number" placeholder="900"></div>
                     </div>
-                    <div class="cal-days"><span class="cal-day-label">일</span><span class="cal-day-label">월</span><span
-                            class="cal-day-label">화</span><span class="cal-day-label">수</span><span
-                            class="cal-day-label">목</span><span class="cal-day-label">금</span><span
-                            class="cal-day-label">토</span></div>
-                    <div class="cal-days" id="adminCalGrid"></div>
                 </div>
-                <p style="font-size:12px;color:var(--txt3);text-align:center;margin-top:10px">날짜를 클릭하여 휴무일을 설정/해제합니다</p>
+                <div id="tablePriceInfo">
+                    <p style="font-size:12px;color:var(--txt2);margin-bottom:6px">기본 요금표가 자동 적용됩니다.</p>
+                    <p style="font-size:12px;color:var(--success)">2대 운송 시 10% 할인 적용</p>
+                </div>
+                <div class="input-group" style="margin-top:12px"><label class="input-label">2대 할인율 (%)</label><input
+                        class="input-field" id="setDiscount" type="number" value="10" placeholder="10"></div>
             </div>
 
-            <!-- Settings Tab -->
-            <div class="tab-pane" id="tab-settings">
-                <div class="settings-section">
-                    <h3>💰 요금 계산 방식</h3>
-                    <div class="toggle-group" id="priceModeToggle" style="margin-bottom:12px">
-                        <button class="toggle-btn active" data-mode="table" onclick="setPriceMode('table')">요금표
-                            기준</button>
-                        <button class="toggle-btn" data-mode="custom" onclick="setPriceMode('custom')">직접 설정</button>
-                    </div>
-                    <div id="customPriceFields" style="display:none">
-                        <div class="input-group"><label class="input-label">기본료 (원)</label><input class="input-field"
-                                id="setBaseFee" type="number" placeholder="0"></div>
-                        <div class="settings-row">
-                            <div class="input-group"><label class="input-label">km당 단가 (1대)</label><input
-                                    class="input-field" id="setRate1" type="number" placeholder="1000"></div>
-                            <div class="input-group"><label class="input-label">km당 단가 (2대)</label><input
-                                    class="input-field" id="setRate2" type="number" placeholder="900"></div>
-                        </div>
-                    </div>
-                    <div id="tablePriceInfo">
-                        <p style="font-size:12px;color:var(--txt2);margin-bottom:6px">기본 요금표가 자동 적용됩니다.</p>
-                        <p style="font-size:12px;color:var(--success)">2대 운송 시 10% 할인 적용</p>
-                    </div>
-                    <div class="input-group" style="margin-top:12px"><label class="input-label">2대 할인율 (%)</label><input
-                            class="input-field" id="setDiscount" type="number" value="10" placeholder="10"></div>
-                </div>
 
 
-
-                <div class="settings-section">
-                    <h3>🗺️ TMAP API 설정</h3>
-                    <div class="input-group"><label class="input-label">TMAP appKey</label><input class="input-field"
-                            id="setTmapKey" placeholder="SK Open API에서 발급받은 appKey"></div>
-                    <p style="font-size:11px;color:var(--txt3);margin-top:4px">openapi.sk.com에서 TMAP API 앱 등록 후 appKey를
-                        입력하세요</p>
-                </div>
-
-                <div class="settings-section">
-                    <h3>☁️ Supabase 설정 (데이터 동기화)</h3>
-                    <div class="input-group"><label class="input-label">Project URL</label><input class="input-field"
-                            id="setSupaUrl" placeholder="https://xxxxx.supabase.co"></div>
-                    <div class="input-group"><label class="input-label">anon Key</label><input class="input-field"
-                            id="setSupaKey" placeholder="eyJhbGciOi..."></div>
-                    <p style="font-size:11px;color:var(--txt3);margin-top:4px">Supabase 연결 시 모든 기기에서 예약을 공유합니다</p>
-                    <button class="btn btn-success btn-sm" style="margin-top:8px;width:100%" onclick="testSupabase()">연결
-                        테스트</button>
-                </div>
-
-                <div class="settings-section">
-                    <h3>🔑 비밀번호 변경</h3>
-                    <div class="input-group"><label class="input-label">새 비밀번호</label><input class="input-field"
-                            id="setNewPw" type="password" placeholder="새 비밀번호"></div>
-                    <div class="input-group"><label class="input-label">비밀번호 확인</label><input class="input-field"
-                            id="setNewPw2" type="password" placeholder="비밀번호 확인"></div>
-                </div>
-
-                <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">설정 저장</button>
+            <div class="settings-section">
+                <h3>🗺️ TMAP API 설정</h3>
+                <div class="input-group"><label class="input-label">TMAP appKey</label><input class="input-field"
+                        id="setTmapKey" placeholder="SK Open API에서 발급받은 appKey"></div>
+                <p style="font-size:11px;color:var(--txt3);margin-top:4px">openapi.sk.com에서 TMAP API 앱 등록 후 appKey를
+                    입력하세요</p>
             </div>
+
+            <div class="settings-section">
+                <h3>☁️ Supabase 설정 (데이터 동기화)</h3>
+                <div class="input-group"><label class="input-label">Project URL</label><input class="input-field"
+                        id="setSupaUrl" placeholder="https://xxxxx.supabase.co"></div>
+                <div class="input-group"><label class="input-label">anon Key</label><input class="input-field"
+                        id="setSupaKey" placeholder="eyJhbGciOi..."></div>
+                <p style="font-size:11px;color:var(--txt3);margin-top:4px">Supabase 연결 시 모든 기기에서 예약을 공유합니다</p>
+                <button class="btn btn-success btn-sm" style="margin-top:8px;width:100%" onclick="testSupabase()">연결
+                    테스트</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>🔑 비밀번호 변경</h3>
+                <div class="input-group"><label class="input-label">새 비밀번호</label><input class="input-field"
+                        id="setNewPw" type="password" placeholder="새 비밀번호"></div>
+                <div class="input-group"><label class="input-label">비밀번호 확인</label><input class="input-field"
+                        id="setNewPw2" type="password" placeholder="비밀번호 확인"></div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">설정 저장</button>
         </div>
+    </div>
 
-        <!-- Toast -->
-        <div class="toast" id="toast"></div>
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
     </div>
 
     <script>
