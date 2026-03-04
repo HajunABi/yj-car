@@ -1111,6 +1111,98 @@
             font-weight: 500;
             margin-top: 4px
         }
+
+        /* User booking check */
+        .user-login-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px
+        }
+
+        .user-login-row .input-field {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 13px
+        }
+
+        .user-booking-item {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 8px;
+            animation: fadeIn .3s ease
+        }
+
+        .user-booking-item .ub-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px
+        }
+
+        .user-booking-item .ub-id {
+            font-size: 11px;
+            color: var(--txt3)
+        }
+
+        .user-booking-item .ub-route {
+            font-size: 13px;
+            color: var(--txt2);
+            margin: 4px 0
+        }
+
+        .user-booking-item .ub-info {
+            font-size: 12px;
+            color: var(--txt3)
+        }
+
+        /* Admin collapsed rejected */
+        .booking-card.collapsed {
+            opacity: 0.6;
+            padding: 10px 16px
+        }
+
+        .booking-card.collapsed .bc-detail {
+            display: none
+        }
+
+        .booking-card.collapsed .bc-header {
+            margin-bottom: 0
+        }
+
+        .expand-toggle {
+            background: none;
+            border: none;
+            color: var(--txt3);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px;
+            font-family: inherit;
+            transition: color .2s
+        }
+
+        .expand-toggle:hover {
+            color: var(--gold)
+        }
+
+        /* Multi-delete */
+        .select-all-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            font-size: 12px;
+            color: var(--txt2)
+        }
+
+        .delete-cb {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--gold);
+            cursor: pointer;
+            flex-shrink: 0
+        }
     </style>
 </head>
 
@@ -1153,6 +1245,19 @@
                         class="cal-day-label">토</span>
                 </div>
                 <div class="cal-days" id="calGrid"></div>
+            </div>
+
+            <!-- 내 예약 확인 -->
+            <div class="card" style="margin-top:16px;padding:16px">
+                <div class="card-title" style="margin-bottom:10px">📋 내 예약 확인</div>
+                <div id="userLoginForm">
+                    <div class="user-login-row">
+                        <input class="input-field" id="userCheckName" placeholder="이름">
+                        <input class="input-field" id="userCheckPw" type="password" maxlength="4" placeholder="비밀번호 4자리" inputmode="numeric" onkeydown="if(event.key==='Enter')userCheckBookings()">
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="width:100%" onclick="userCheckBookings()">예약 조회</button>
+                </div>
+                <div id="userBookingsArea" style="display:none"></div>
             </div>
 
             <div class="bottom-bar">
@@ -1249,6 +1354,7 @@
                     placeholder="이름 입력"></div>
             <div class="input-group"><label class="input-label">연락처 *</label><input class="input-field" id="custPhone"
                     type="tel" placeholder="010-0000-0000" oninput="formatPhone(this)"></div>
+            <div class="input-group"><label class="input-label">임시 비밀번호 (4자리) *</label><input class="input-field" id="tempPw" type="password" maxlength="4" placeholder="예약 확인용 숫자 4자리" inputmode="numeric"></div>
 
             <div class="section-title"><span class="icon">💳</span> 결제 수단</div>
             <div class="chip-group" id="payChips">
@@ -1329,6 +1435,13 @@
                     <button class="filter-chip" data-filter="pending" onclick="filterBookings(this)">⏳ 대기</button>
                     <button class="filter-chip" data-filter="approved" onclick="filterBookings(this)">✅ 승인</button>
                     <button class="filter-chip" data-filter="rejected" onclick="filterBookings(this)">❌ 거절</button>
+                </div>
+                <div id="multiDeleteBar" style="display:none">
+                    <div class="select-all-row">
+                        <input type="checkbox" class="delete-cb" id="selectAllCb" onchange="toggleSelectAll(this)">
+                        <span>전체 선택</span>
+                        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteSelectedBookings()">🗑 선택 삭제</button>
+                    </div>
                 </div>
                 <div id="bookingsList"></div>
             </div>
@@ -1428,7 +1541,10 @@
             calMonth: new Date().getMonth(),
             adminCalYear: new Date().getFullYear(),
             adminCalMonth: new Date().getMonth(),
-            adminFilter: 'all'
+            adminFilter: 'all',
+            userLoggedIn: false,
+            userName: null,
+            userPw: null
         };
 
         // ==================== PRICING TABLE ====================
@@ -1503,7 +1619,8 @@
                         vin: booking.vin || '', pickup_time: booking.pickupTime || '',
                         customer_name: booking.name, customer_phone: booking.phone,
                         pay_method: booking.payMethod, memo: booking.memo || '',
-                        status: booking.status, created_at: booking.createdAt
+                        status: booking.status, created_at: booking.createdAt,
+                        temp_pw: booking.tempPw || ''
                     });
                 } catch (e) { console.warn('Supabase insert failed:', e); }
             }
@@ -1604,7 +1721,6 @@
             const daysInMonth = new Date(y, m + 1, 0).getDate();
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const holidays = getHolidays();
-            const reservations = getReservations();
 
             for (let i = 0; i < firstDay; i++) {
                 grid.innerHTML += '<span class="cal-cell empty"></span>';
@@ -1616,17 +1732,14 @@
                 const isHoliday = holidays.includes(dateStr);
                 const isSelected = S.selectedDate === dateStr;
                 const isToday = dateObj.getTime() === today.getTime();
-                const bookCount = reservations.filter(r => r.date === dateStr).length;
-
                 let cls = 'cal-cell';
                 if (isPast) cls += ' past';
                 else if (isHoliday) cls += ' holiday';
                 if (isToday) cls += ' today';
                 if (isSelected) cls += ' selected';
 
-                const dot = bookCount > 0 ? '<span class="booking-dot"></span>' : '';
                 const clickable = !isPast && !isHoliday;
-                grid.innerHTML += `<span class="${cls}" ${clickable ? `onclick="selectDate('${dateStr}')"` : ''}>${d}${dot}</span>`;
+                grid.innerHTML += `<span class="${cls}" ${clickable ? `onclick="selectDate('${dateStr}')"` : ''}>${d}</span>`;
             }
         }
 
@@ -1882,12 +1995,14 @@
             const pickupTime = document.getElementById('pickupTime').value;
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
+            const tempPw = document.getElementById('tempPw').value.trim();
 
             if (!vType) { showToast('차종을 입력해 주세요', 'error'); return; }
             if (!plate) { showToast('차량 번호를 입력해 주세요', 'error'); return; }
             if (!pickupTime) { showToast('상차 시간을 선택해 주세요', 'error'); return; }
             if (!name) { showToast('이름을 입력해 주세요', 'error'); return; }
             if (!phone || phone.replace(/\D/g, '').length < 10) { showToast('올바른 연락처를 입력해 주세요', 'error'); return; }
+            if (!tempPw || tempPw.length !== 4) { showToast('임시 비밀번호 4자리를 입력해 주세요', 'error'); return; }
 
             const reservations = getReservations();
             const dateNum = S.selectedDate.replace(/-/g, '');
@@ -1900,7 +2015,7 @@
                 from: S.fromAddr, to: S.toAddr, distance: S.distance,
                 price: S.price,
                 plate, vin, pickupTime,
-                name, phone,
+                name, phone, tempPw,
                 payMethod: S.payMethod || '미선택',
                 memo: document.getElementById('memo').value.trim(),
                 status: 'pending',
@@ -1945,6 +2060,7 @@
             document.getElementById('pickupTime').value = '09:00';
             document.getElementById('custName').value = '';
             document.getElementById('custPhone').value = '';
+            document.getElementById('tempPw').value = '';
             document.getElementById('memo').value = '';
             document.getElementById('priceSection').style.display = 'none';
             document.getElementById('btnNext1').disabled = true;
@@ -2007,6 +2123,7 @@
 
             if (!filtered.length) {
                 container.innerHTML = '<p style="text-align:center;color:var(--txt3);padding:40px 0">예약이 없습니다</p>';
+                document.getElementById('multiDeleteBar').style.display = 'none';
                 return;
             }
 
@@ -2024,6 +2141,16 @@
                 allByDate[r.date].push(r);
             });
 
+            // Sort within each group: pending → approved → rejected
+            const statusOrder = { pending: 0, approved: 1, rejected: 2 };
+            Object.values(grouped).forEach(arr => arr.sort((a, b) => (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0)));
+
+            // Show/hide multi-delete bar
+            const multiBar = document.getElementById('multiDeleteBar');
+            const hasRejected = filtered.some(r => r.status === 'rejected');
+            multiBar.style.display = hasRejected ? 'block' : 'none';
+            if (document.getElementById('selectAllCb')) document.getElementById('selectAllCb').checked = false;
+
             const sortedDates = Object.keys(grouped).sort().reverse();
             let html = '';
             sortedDates.forEach(date => {
@@ -2037,13 +2164,37 @@
 
                 grouped[date].forEach(r => {
                     const statusLabel = { pending: '⏳ 대기', approved: '✅ 승인', rejected: '❌ 거절' }[r.status];
+                    const isRejected = r.status === 'rejected';
                     const actions = r.status === 'pending' ? `
         <div class="bc-actions">
           <button class="btn btn-success btn-sm" onclick="updateBooking('${r.id}','approved')">✅ 승인</button>
           <button class="btn btn-danger btn-sm" onclick="updateBooking('${r.id}','rejected')">❌ 거절</button>
         </div>` : '';
 
-                    html += `
+                    if (isRejected) {
+                        html += `
+        <div class="booking-card collapsed" id="bc-${r.id}">
+          <div class="bc-header">
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" class="delete-cb rejected-cb" data-id="${r.id}" onchange="onDeleteCbChange()">
+              <span class="bc-id">${r.id}</span>
+              <span style="font-size:12px;color:var(--txt3)">${r.name}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="bc-status ${r.status}">${statusLabel}</span>
+              <button class="expand-toggle" onclick="toggleCollapse('${r.id}')">▼</button>
+            </div>
+          </div>
+          <div class="bc-detail">
+            <div class="bc-name">${r.name} · ${r.phone}</div>
+            <div class="bc-route">📍 ${r.from} → ${r.to}</div>
+            <div class="bc-info">${r.carCount}대 · ${r.vehicleType || ''} · ${r.distance}km · ${r.plate}${r.pickupTime ? ' · ' + r.pickupTime : ''}</div>
+            <div class="bc-info" style="color:var(--gold)">₩${r.price.toLocaleString()} · ${r.payMethod}</div>
+            ${r.memo ? `<div class="bc-info" style="margin-top:4px">📝 ${r.memo}</div>` : ''}
+          </div>
+        </div>`;
+                    } else {
+                        html += `
         <div class="booking-card">
           <div class="bc-header">
             <span class="bc-id">${r.id}</span>
@@ -2056,6 +2207,7 @@
           ${r.memo ? `<div class="bc-info" style="margin-top:4px">📝 ${r.memo}</div>` : ''}
           ${actions}
         </div>`;
+                    }
                 });
             });
             container.innerHTML = html;
@@ -2066,6 +2218,94 @@
             await refreshAdminData();
             renderAdminBookings();
             showToast(status === 'approved' ? '승인 처리되었습니다' : '거절 처리되었습니다', 'success');
+        }
+
+        // ==================== COLLAPSED TOGGLE ====================
+        function toggleCollapse(id) {
+            const card = document.getElementById('bc-' + id);
+            if (card) {
+                card.classList.toggle('collapsed');
+                const btn = card.querySelector('.expand-toggle');
+                if (btn) btn.textContent = card.classList.contains('collapsed') ? '▼' : '▲';
+            }
+        }
+
+        // ==================== MULTI-DELETE ====================
+        function onDeleteCbChange() {
+            const allCbs = document.querySelectorAll('.rejected-cb');
+            const checked = document.querySelectorAll('.rejected-cb:checked');
+            const selectAll = document.getElementById('selectAllCb');
+            if (selectAll) selectAll.checked = allCbs.length > 0 && checked.length === allCbs.length;
+        }
+
+        function toggleSelectAll(cb) {
+            document.querySelectorAll('.rejected-cb').forEach(c => c.checked = cb.checked);
+        }
+
+        async function deleteSelectedBookings() {
+            const checked = document.querySelectorAll('.rejected-cb:checked');
+            if (!checked.length) { showToast('삭제할 예약을 선택해 주세요', 'error'); return; }
+            if (!confirm(checked.length + '건의 거절 예약을 삭제하시겠습니까?')) return;
+            const ids = Array.from(checked).map(c => c.dataset.id);
+            await deleteReservations(ids);
+            await refreshAdminData();
+            renderAdminBookings();
+            showToast(ids.length + '건 삭제 완료', 'success');
+        }
+
+        async function deleteReservations(ids) {
+            let local = loadLocal('yj_reservations', []);
+            local = local.filter(r => !ids.includes(r.id));
+            saveLocal('yj_reservations', local);
+            const sb = getSupa();
+            if (sb) {
+                try {
+                    for (const id of ids) {
+                        await sb.from('reservations').delete().eq('id', id);
+                    }
+                } catch (e) { console.warn(e); }
+            }
+        }
+
+        // ==================== USER BOOKING CHECK ====================
+        function userCheckBookings() {
+            const name = document.getElementById('userCheckName').value.trim();
+            const pw = document.getElementById('userCheckPw').value.trim();
+            if (!name) { showToast('이름을 입력해 주세요', 'error'); return; }
+            if (!pw || pw.length !== 4) { showToast('4자리 비밀번호를 입력해 주세요', 'error'); return; }
+            const reservations = getReservations();
+            const mine = reservations.filter(r => r.name === name && r.tempPw === pw);
+            if (!mine.length) { showToast('일치하는 예약이 없습니다', 'error'); return; }
+            S.userLoggedIn = true; S.userName = name; S.userPw = pw;
+            renderUserBookings(mine);
+        }
+
+        function renderUserBookings(bookings) {
+            const area = document.getElementById('userBookingsArea');
+            document.getElementById('userLoginForm').style.display = 'none';
+            area.style.display = 'block';
+            const statusOrder = { pending: 0, approved: 1, rejected: 2 };
+            bookings.sort((a, b) => (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0));
+            let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+                '<span style="font-size:13px;color:var(--txt2)">👤 ' + S.userName + '님의 예약</span>' +
+                '<button class="btn btn-ghost btn-sm" onclick="userLogout()">로그아웃</button></div>';
+            bookings.forEach(r => {
+                const statusLabel = { pending: '⏳ 대기중', approved: '✅ 승인됨', rejected: '❌ 거절됨' }[r.status];
+                html += '<div class="user-booking-item">' +
+                    '<div class="ub-header"><span class="ub-id">' + r.id + ' · ' + formatDateKR(r.date) + '</span>' +
+                    '<span class="bc-status ' + r.status + '">' + statusLabel + '</span></div>' +
+                    '<div class="ub-route">📍 ' + r.from + ' → ' + r.to + '</div>' +
+                    '<div class="ub-info">' + r.carCount + '대 · ' + (r.vehicleType || '') + ' · ' + r.distance + 'km · ₩' + r.price.toLocaleString() + '</div></div>';
+            });
+            area.innerHTML = html;
+        }
+
+        function userLogout() {
+            S.userLoggedIn = false; S.userName = null; S.userPw = null;
+            document.getElementById('userLoginForm').style.display = 'block';
+            document.getElementById('userBookingsArea').style.display = 'none';
+            document.getElementById('userCheckName').value = '';
+            document.getElementById('userCheckPw').value = '';
         }
 
         // Refresh local data from Supabase
@@ -2079,7 +2319,8 @@
                 vin: r.vin || '', pickupTime: r.pickup_time || r.pickupTime || '',
                 name: r.customer_name || r.name, phone: r.customer_phone || r.phone,
                 payMethod: r.pay_method || r.payMethod, memo: r.memo || '',
-                status: r.status, createdAt: r.created_at || r.createdAt
+                status: r.status, createdAt: r.created_at || r.createdAt,
+                tempPw: r.temp_pw || r.tempPw || ''
             })));
             const holidays = await getHolidaysAsync();
             saveLocal('yj_holidays', holidays);
