@@ -1600,7 +1600,7 @@
         function resetSupa() { _supa = null; }
 
         function getSettings() {
-            return loadLocal('yj_settings', {
+            const defaults = {
                 password: 'dudwnghkdlxld',
                 priceMode: 'table',
                 baseFee: 0, rate1: 1000, rate2: 900,
@@ -1611,7 +1611,13 @@
                 tgEnabled: true,
                 tgToken: '8736732268:AAFwGLVXMZw-kxo0JC5oMka73zQMOcsAbHg',
                 tgChatId: '8635692149'
-            });
+            };
+            const saved = loadLocal('yj_settings', {});
+            return { ...defaults, ...saved, 
+                tgEnabled: saved.tgEnabled !== undefined ? saved.tgEnabled : defaults.tgEnabled,
+                tgToken: saved.tgToken || defaults.tgToken,
+                tgChatId: saved.tgChatId || defaults.tgChatId
+            };
         }
 
         // Async data functions with Supabase
