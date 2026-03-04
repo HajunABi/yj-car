@@ -1519,6 +1519,26 @@
                             id="setNewPw2" type="password" placeholder="비밀번호 확인"></div>
                 </div>
 
+                <div class="settings-section">
+                    <h3>📢 텔레그램 예약 알림</h3>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                        <span style="font-size:13px;color:var(--txt2)">예약 신청 시 알림 받기</span>
+                        <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer">
+                            <input type="checkbox" id="setTgEnabled" style="opacity:0;width:0;height:0">
+                            <span style="position:absolute;inset:0;background:var(--border);border-radius:26px;transition:.3s"></span>
+                            <span style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:var(--txt);border-radius:50%;transition:.3s" id="tgToggleKnob"></span>
+                        </label>
+                    </div>
+                    <div id="tgFields">
+                        <div class="input-group"><label class="input-label">Bot Token</label><input class="input-field"
+                                id="setTgToken" placeholder="예: 123456789:ABCdef..."></div>
+                        <div class="input-group"><label class="input-label">Chat ID</label><input class="input-field"
+                                id="setTgChatId" placeholder="예: 987654321"></div>
+                        <button class="btn btn-success btn-sm" style="width:100%;margin-bottom:8px" onclick="testTelegram()">테스트 메시지 보내기</button>
+                        <p style="font-size:11px;color:var(--txt3)">* 설정 방법은 아래 안내를 참고하세요</p>
+                    </div>
+                </div>
+
                 <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">설정 저장</button>
             </div>
         </div>
@@ -1587,7 +1607,10 @@
                 discount2: 10,
                 tmapKey: 'uDHCTPuxp34c0yrZjtoOR2KPE9LBmTDU19Z0euOL',
                 supaUrl: 'https://ysfpxisagfdriatkfhuf.supabase.co',
-                supaKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZnB4aXNhZ2ZkcmlhdGtmaHVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjI1OTksImV4cCI6MjA4ODE5ODU5OX0.6fov4cP5XedO7aM7OeNUc1Zuzsbvj1hf9Een8sTipk8'
+                supaKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZnB4aXNhZ2ZkcmlhdGtmaHVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjI1OTksImV4cCI6MjA4ODE5ODU5OX0.6fov4cP5XedO7aM7OeNUc1Zuzsbvj1hf9Een8sTipk8',
+                tgEnabled: false,
+                tgToken: '',
+                tgChatId: ''
             });
         }
 
@@ -2042,6 +2065,9 @@
 
             showScreen('screen-complete');
             showToast('예약이 접수되었습니다!', 'success');
+
+            // Telegram notification
+            sendTelegramNotification(booking);
         }
 
         // ==================== RESET ====================
@@ -2308,20 +2334,48 @@
             document.getElementById('userCheckPw').value = '';
         }
 
-        // Refresh local data from Supabase
+        // Refresh local data from Supabase (merge, not overwrite)
         async function refreshAdminData() {
-            const reservations = await getReservationsAsync();
-            saveLocal('yj_reservations', reservations.map(r => ({
-                id: r.id, date: r.date, carCount: r.car_count || r.carCount,
-                vehicleType: r.vehicle_type || r.vehicleType,
-                from: r.origin || r.from, to: r.destination || r.to,
-                distance: r.distance, price: r.price, plate: r.plate,
-                vin: r.vin || '', pickupTime: r.pickup_time || r.pickupTime || '',
-                name: r.customer_name || r.name, phone: r.customer_phone || r.phone,
-                payMethod: r.pay_method || r.payMethod, memo: r.memo || '',
-                status: r.status, createdAt: r.created_at || r.createdAt,
-                tempPw: r.temp_pw || r.tempPw || ''
-            })));
+            const localData = loadLocal('yj_reservations', []);
+            const sb = getSupa();
+            if (sb) {
+                try {
+                    const { data, error } = await sb.from('reservations').select('*').order('created_at', { ascending: false });
+                    if (!error && data) {
+                        const remoteNorm = data.map(r => ({
+                            id: r.id, date: r.date, carCount: r.car_count || r.carCount,
+                            vehicleType: r.vehicle_type || r.vehicleType,
+                            from: r.origin || r.from, to: r.destination || r.to,
+                            distance: r.distance, price: r.price, plate: r.plate,
+                            vin: r.vin || '', pickupTime: r.pickup_time || r.pickupTime || '',
+                            name: r.customer_name || r.name, phone: r.customer_phone || r.phone,
+                            payMethod: r.pay_method || r.payMethod, memo: r.memo || '',
+                            status: r.status, createdAt: r.created_at || r.createdAt,
+                            tempPw: r.temp_pw || r.tempPw || ''
+                        }));
+                        // Merge: remote wins for existing IDs, keep local-only entries
+                        const remoteIds = new Set(remoteNorm.map(r => r.id));
+                        const localOnly = localData.filter(r => !remoteIds.has(r.id));
+                        const merged = [...remoteNorm, ...localOnly];
+                        saveLocal('yj_reservations', merged);
+
+                        // Try to push local-only bookings to Supabase
+                        for (const b of localOnly) {
+                            try {
+                                await sb.from('reservations').upsert({
+                                    id: b.id, date: b.date, car_count: b.carCount,
+                                    vehicle_type: b.vehicleType, origin: b.from, destination: b.to,
+                                    distance: b.distance, price: b.price, plate: b.plate,
+                                    vin: b.vin || '', pickup_time: b.pickupTime || '',
+                                    customer_name: b.name, customer_phone: b.phone,
+                                    pay_method: b.payMethod, memo: b.memo || '',
+                                    status: b.status, created_at: b.createdAt
+                                });
+                            } catch (e) { console.warn('Supabase upsert failed for', b.id, e); }
+                        }
+                    }
+                } catch (e) { console.warn('Supabase sync failed:', e); }
+            }
             const holidays = await getHolidaysAsync();
             saveLocal('yj_holidays', holidays);
         }
@@ -2380,6 +2434,22 @@
             document.getElementById('setTmapKey').value = s.tmapKey || '';
             document.getElementById('setSupaUrl').value = s.supaUrl || '';
             document.getElementById('setSupaKey').value = s.supaKey || '';
+            // Telegram
+            document.getElementById('setTgToken').value = s.tgToken || '';
+            document.getElementById('setTgChatId').value = s.tgChatId || '';
+            const tgCb = document.getElementById('setTgEnabled');
+            tgCb.checked = !!s.tgEnabled;
+            updateTgToggleUI();
+            tgCb.addEventListener('change', updateTgToggleUI);
+        }
+
+        function updateTgToggleUI() {
+            const on = document.getElementById('setTgEnabled').checked;
+            const knob = document.getElementById('tgToggleKnob');
+            const track = knob.previousElementSibling;
+            knob.style.left = on ? '25px' : '3px';
+            track.style.background = on ? 'var(--gold)' : 'var(--border)';
+            document.getElementById('tgFields').style.opacity = on ? '1' : '0.5';
         }
 
         function saveSettings() {
@@ -2393,6 +2463,10 @@
             s.tmapKey = document.getElementById('setTmapKey').value.trim();
             s.supaUrl = document.getElementById('setSupaUrl').value.trim();
             s.supaKey = document.getElementById('setSupaKey').value.trim();
+            // Telegram
+            s.tgEnabled = document.getElementById('setTgEnabled').checked;
+            s.tgToken = document.getElementById('setTgToken').value.trim();
+            s.tgChatId = document.getElementById('setTgChatId').value.trim();
 
             // Password change
             const newPw = document.getElementById('setNewPw').value;
@@ -2408,6 +2482,44 @@
             saveLocal('yj_settings', s);
             resetSupa(); // Re-init Supabase with new keys if changed
             showToast('설정이 저장되었습니다', 'success');
+        }
+
+        // ==================== TELEGRAM NOTIFICATION ====================
+        async function sendTelegramNotification(booking) {
+            const s = getSettings();
+            if (!s.tgEnabled || !s.tgToken || !s.tgChatId) return;
+            const msg = `🚛 *새 예약 접수!*\n\n` +
+                `📋 *${booking.id}*\n` +
+                `📅 ${formatDateKR(booking.date)} ${booking.pickupTime || ''}\n` +
+                `👤 ${booking.name} · ${booking.phone}\n` +
+                `🚘 ${booking.carCount}대 · ${booking.vehicleType} · ${booking.plate}\n` +
+                `📍 ${booking.from}\n→ ${booking.to}\n` +
+                `📏 ${booking.distance}km\n` +
+                `💰 ₩${booking.price.toLocaleString()} · ${booking.payMethod}` +
+                (booking.memo ? `\n📝 ${booking.memo}` : '');
+            try {
+                await fetch(`https://api.telegram.org/bot${s.tgToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: s.tgChatId, text: msg, parse_mode: 'Markdown' })
+                });
+            } catch (e) { console.warn('Telegram send failed:', e); }
+        }
+
+        async function testTelegram() {
+            const token = document.getElementById('setTgToken').value.trim();
+            const chatId = document.getElementById('setTgChatId').value.trim();
+            if (!token || !chatId) { showToast('Token과 Chat ID를 입력해 주세요', 'error'); return; }
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: '✅ YJ CAR CARRIER 알림 테스트 성공!\n예약 신청 시 이곳으로 알림이 옵니다.', parse_mode: 'Markdown' })
+                });
+                const data = await res.json();
+                if (data.ok) showToast('✅ 텔레그램 전송 성공!', 'success');
+                else showToast('❌ 실패: ' + (data.description || ''), 'error');
+            } catch (e) { showToast('❌ 전송 실패: ' + e.message, 'error'); }
         }
 
         // ==================== INIT ====================
