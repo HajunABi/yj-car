@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>YJ CAR CARRIER - 차량 탁송 예약</title>
+    <meta name="description" content="YJ CAR CARRIER 차량 탁송 예약 서비스. 합리적인 금액, 적재물 보험 가입, 전국 네트워크망.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent
+        }
+
+        :root {
+            --bg1: #0a1628;
+            --bg2: #111d33;
+            --bg3: rgba(22, 32, 64, 0.7);
+            --gold: #c8a45a;
+            --gold-l: #e8c97a;
+            --gold-d: #a0833a;
+            --gold-glow: rgba(200, 164, 90, 0.2);
+            --txt: #f0f0f0;
+            --txt2: #a0aec0;
+            --txt3: #6b7a90;
+            --border: rgba(200, 164, 90, 0.15);
+            --radius: 12px;
+            --radius-lg: 16px;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4)
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            background: var(--bg1);
+            color: var(--txt);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 30% 10%, rgba(200, 164, 90, 0.06), transparent 60%), radial-gradient(ellipse at 70% 90%, rgba(200, 164, 90, 0.03), transparent 50%);
+            pointer-events: none;
+            z-index: 0
+        }
+
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 0 20px 30px;
+            animation: fadeIn .4s ease
+        }
+
+        .screen.active {
+            display: flex
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0)
+            }
+
+            70% {
+                transform: scale(1.08)
+            }
+
+            to {
+                transform: scale(1)
+            }
+        }
+
+        @keyframes drawCheck {
+            to {
+                stroke-dashoffset: 0
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .6
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 0 10px;
+            text-align: center;
+            position: relative
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 4px
+        }
+
+        .logo-svg {
+            width: 52px;
+            height: 44px
+        }
+
+        .brand-name {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--gold-l), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: var(--txt3);
+            letter-spacing: 4px;
+            text-transform: uppercase
+        }
+
+        /* Calendar */
+        .cal-wrap {
+            background: var(--bg3);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-top: 16px
+        }
+
+        .cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px
+        }
+
+        .cal-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--gold-l)
+        }
+
+        .cal-nav {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--gold);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s
+        }
+
+        .cal-nav:hover {
+            background: var(--gold-glow)
+        }
+
+        .cal-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            gap: 4px;
+            margin-bottom: 8px
+        }
+
+        .cal-day-label {
+            font-size: 11px;
+            color: var(--txt3);
+            padding: 4px 0;
+            font-weight: 500
+        }
+
+        .cal-day-label:first-child {
+            color: var(--danger)
+        }
+
+        .cal-day-label:last-child {
+            color: #60a5fa
+        }
+
+        .cal-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all .2s;
+            position: relative;
+            font-weight: 500
+        }
+
+        .cal-cell:hover:not(.disabled):not(.empty) {
+            background: var(--gold-glow)
+        }
+
+        .cal-cell.empty {
+            cursor: default
+        }
+
+        .cal-cell.today {
+            border: 1.5px solid var(--gold);
+            color: var(--gold-l)
+        }
+
+        .cal-cell.selected {
+            background: linear-gradient(135deg, var(--gold), var(--gold-d));
+            color: var(--bg1);
+            font-weight: 700
+        }
+
+        .cal-cell.holiday {
+            color: var(--txt3);
+            text-decoration: line-through;
+            cursor: not-allowed;
+            opacity: .5
+        }
+
+        .cal-cell.past {
+            color: var(--txt3);
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        .cal-cell .booking-dot {
+            position: absolute;
+            bottom: 3px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--gold)
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 14px 24px;
+            border-radius: var(--radius);
+            border: none;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px
+        }
+
+        .btn:active {
+            transform: scale(.97)
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold), var(--gold-d));
+            color: var(--bg1);
+            box-shadow: 0 4px 20px rgba(200, 164, 90, 0.3)
+        }
+
+        .btn-primary:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .btn-primary:not(:disabled):hover {
+            box-shadow: 0 6px 28px rgba(200, 164, 90, 0.4);
+            transform: translateY(-1px)
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--gold)
+        }
+
+        .btn-outline:hover {
+            border-color: var(--gold);
+            background: var(--gold-glow)
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--txt2);
+            font-size: 13px;
+            padding: 8px 12px
+        }
+
+        .btn-ghost:hover {
+            color: var(--gold)
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 8px
+        }
+
+        .btn-danger {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(248, 113, 113, 0.2)
+        }
+
+        .btn-success {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(74, 222, 128, 0.2)
+        }
+
+        /* Chips */
+        .chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px
+        }
+
+        .chip {
+            padding: 10px 16px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--txt2);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .25s
+        }
+
+        .chip.active {
+            border-color: var(--gold);
+            background: linear-gradient(135deg, rgba(200, 164, 90, 0.2), rgba(200, 164, 90, 0.05));
+            color: var(--gold-l)
+        }
+
+        .chip:hover:not(.active) {
+            border-color: rgba(200, 164, 90, 0.4)
+        }
+
+        /* Toggle */
+        .toggle-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: var(--bg2);
+            border-radius: var(--radius);
+            padding: 4px;
+            border: 1px solid var(--border)
+        }
+
+        .toggle-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--txt2);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .25s
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, var(--gold), var(--gold-d));
+            color: var(--bg1)
+        }
+
+        /* Inputs */
+        .input-group {
+            margin-bottom: 16px
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            color: var(--txt2);
+            margin-bottom: 6px;
+            font-weight: 500
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 13px 16px;
+            background: var(--bg2);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--txt);
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+            transition: all .2s
+        }
+
+        .input-field:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-glow)
+        }
+
+        .input-field::placeholder {
+            color: var(--txt3)
+        }
+
+        textarea.input-field {
+            min-height: 80px;
+            resize: vertical
+        }
+
+        /* Address autocomplete */
+        .addr-wrap {
+            position: relative
+        }
+
+        .addr-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 0 0 var(--radius) var(--radius);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 20;
+            display: none;
+            animation: slideDown .2s ease
+        }
+
+        .addr-dropdown.show {
+            display: block
+        }
+
+        .addr-item {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--txt2);
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background .15s
+        }
+
+        .addr-item:hover {
+            background: var(--gold-glow);
+            color: var(--txt)
+        }
+
+        .addr-item:last-child {
+            border-bottom: none
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg3);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 12px;
+            animation: fadeIn .4s ease
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gold-l);
+            margin-bottom: 12px
+        }
+
+        /* Info rows */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 14px
+        }
+
+        .info-row .label {
+            color: var(--txt2)
+        }
+
+        .info-row .value {
+            color: var(--txt);
+            font-weight: 500;
+            text-align: right
+        }
+
+        .info-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 8px 0
+        }
+
+        /* Price display */
+        .price-box {
+            background: linear-gradient(135deg, rgba(200, 164, 90, 0.15), rgba(200, 164, 90, 0.05));
+            border: 1px solid rgba(200, 164, 90, 0.25);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            text-align: center;
+            margin: 16px 0
+        }
+
+        .price-label {
+            font-size: 12px;
+            color: var(--txt2);
+            margin-bottom: 4px
+        }
+
+        .price-amount {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gold-l), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .price-detail {
+            font-size: 12px;
+            color: var(--txt3);
+            margin-top: 8px
+        }
+
+        .discount-badge {
+            display: inline-block;
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-top: 6px
+        }
+
+        /* Step indicator */
+        .step-bar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 16px 0;
+            justify-content: center
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all .3s
+        }
+
+        .step-dot.active {
+            background: var(--gold);
+            box-shadow: 0 0 8px var(--gold-glow)
+        }
+
+        .step-dot.done {
+            background: var(--gold-d)
+        }
+
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: var(--border)
+        }
+
+        .step-line.done {
+            background: var(--gold-d)
+        }
+
+        /* Back button */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0 8px
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--txt2);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: color .2s
+        }
+
+        .back-btn:hover {
+            color: var(--gold)
+        }
+
+        .top-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--txt)
+        }
+
+        /* Success screen */
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 30px auto 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold), var(--gold-d));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn .5s ease
+        }
+
+        .success-icon svg {
+            width: 40px;
+            height: 40px
+        }
+
+        .success-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gold-l);
+            margin-bottom: 6px
+        }
+
+        .success-sub {
+            text-align: center;
+            font-size: 14px;
+            color: var(--txt2);
+            margin-bottom: 24px
+        }
+
+        /* Features */
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            padding: 16px 0;
+            margin-top: auto
+        }
+
+        .feature-tag {
+            font-size: 11px;
+            color: var(--txt3);
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .feature-tag::before {
+            content: '✔';
+            color: var(--gold);
+            font-size: 10px
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 24px;
+            font-size: 14px;
+            color: var(--txt);
+            z-index: 1000;
+            transition: transform .4s ease;
+            box-shadow: var(--shadow);
+            max-width: 90%
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0)
+        }
+
+        .toast.error {
+            border-color: rgba(248, 113, 113, 0.4);
+            color: var(--danger)
+        }
+
+        .toast.success {
+            border-color: rgba(74, 222, 128, 0.4);
+            color: var(--success)
+        }
+
+        /* Admin */
+        .admin-login-box {
+            max-width: 320px;
+            margin: auto;
+            text-align: center;
+            padding-top: 60px
+        }
+
+        .admin-login-box .logo-svg {
+            width: 64px;
+            height: 54px;
+            margin: 0 auto 20px
+        }
+
+        .admin-tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            gap: 0;
+            margin: -0px -20px 16px;
+            padding: 0 20px
+        }
+
+        .admin-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--txt3);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all .2s
+        }
+
+        .admin-tab.active {
+            color: var(--gold);
+            border-bottom-color: var(--gold)
+        }
+
+        .admin-tab:hover:not(.active) {
+            color: var(--txt2)
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn .3s ease
+        }
+
+        .tab-pane.active {
+            display: block
+        }
+
+        /* Booking cards (admin) */
+        .booking-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 10px;
+            animation: fadeIn .3s ease
+        }
+
+        .booking-card .bc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px
+        }
+
+        .booking-card .bc-id {
+            font-size: 11px;
+            color: var(--txt3);
+            font-weight: 500
+        }
+
+        .booking-card .bc-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px
+        }
+
+        .bc-status.pending {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--warning)
+        }
+
+        .bc-status.approved {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success)
+        }
+
+        .bc-status.rejected {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--danger)
+        }
+
+        .booking-card .bc-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--txt)
+        }
+
+        .booking-card .bc-route {
+            font-size: 13px;
+            color: var(--txt2);
+            margin: 4px 0
+        }
+
+        .booking-card .bc-info {
+            font-size: 12px;
+            color: var(--txt3)
+        }
+
+        .booking-card .bc-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px
+        }
+
+        .dup-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--warning);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 10px
+        }
+
+        .date-group-header {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gold-l);
+            padding: 12px 0 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .date-group-header .count {
+            font-size: 11px;
+            background: var(--gold-glow);
+            color: var(--gold);
+            padding: 2px 8px;
+            border-radius: 10px
+        }
+
+        /* Filter chips */
+        .filter-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 4px
+        }
+
+        .filter-chip {
+            padding: 7px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--txt2);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .2s
+        }
+
+        .filter-chip.active {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: var(--bg1)
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: var(--txt2)
+        }
+
+        .loading.show {
+            display: flex
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin .8s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* Bottom bar */
+        .bottom-bar {
+            padding: 16px 0;
+            margin-top: auto
+        }
+
+        .admin-link {
+            text-align: center;
+            margin-top: 16px
+        }
+
+        .admin-link button {
+            background: none;
+            border: none;
+            color: var(--txt3);
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 8px
+        }
+
+        .admin-link button:hover {
+            color: var(--gold)
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--gold-l);
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin: 12px 0;
+            transition: all .2s
+        }
+
+        .contact-link:hover {
+            background: var(--gold-glow)
+        }
+
+        /* Settings fields in admin */
+        .settings-section {
+            margin-bottom: 24px
+        }
+
+        .settings-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gold-l);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .settings-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px
+        }
+
+        /* Section title */
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--txt);
+            margin: 20px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .section-title .icon {
+            font-size: 16px
+        }
+
+        /* Route display */
+        .route-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0
+        }
+
+        .route-point {
+            flex: 1;
+            text-align: center
+        }
+
+        .route-point .city {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--txt)
+        }
+
+        .route-point .addr {
+            font-size: 11px;
+            color: var(--txt3);
+            margin-top: 2px;
+            line-height: 1.3
+        }
+
+        .route-arrow {
+            color: var(--gold);
+            font-size: 20px;
+            flex-shrink: 0
+        }
+
+        .dist-badge {
+            text-align: center;
+            font-size: 13px;
+            color: var(--gold);
+            font-weight: 500;
+            margin-top: 4px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app" id="app">
+
+        <!-- ========== Screen 1: Main / Calendar ========== -->
+        <div class="screen active" id="screen-main">
+            <div class="header">
+                <div class="logo-area">
+                    <svg class="logo-svg" viewBox="0 0 52 44">
+                        <defs>
+                            <linearGradient id="gGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#e8c97a" />
+                                <stop offset="100%" stop-color="#c8a45a" />
+                            </linearGradient>
+                            <pattern id="stripes" patternUnits="userSpaceOnUse" width="100" height="5">
+                                <line x1="0" y1="1" x2="100" y2="1" stroke="#c8a45a" stroke-width="2.2" />
+                            </pattern>
+                            <mask id="tm"><text x="2" y="36" font-family="Outfit" font-weight="800" font-size="42"
+                                    fill="white" letter-spacing="-2">YJ</text></mask>
+                        </defs>
+                        <rect width="52" height="44" fill="url(#stripes)" mask="url(#tm)" />
+                        <text x="2" y="36" font-family="Outfit" font-weight="800" font-size="42" fill="none"
+                            stroke="url(#gGold)" stroke-width="0.8" letter-spacing="-2">YJ</text>
+                    </svg>
+                    <div>
+                        <div class="brand-name">YJ CAR CARRIER</div>
+                    </div>
+                </div>
+                <div class="brand-sub">차량 운송 전문업체</div>
+            </div>
+
+            <div class="cal-wrap">
+                <div class="cal-header">
+                    <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+                    <span class="cal-title" id="calTitle"></span>
+                    <button class="cal-nav" onclick="changeMonth(1)">›</button>
+                </div>
+                <div class="cal-days" id="calDays">
+                    <span class="cal-day-label">일</span><span class="cal-day-label">월</span><span
+                        class="cal-day-label">화</span><span class="cal-day-label">수</span><span
+                        class="cal-day-label">목</span><span class="cal-day-label">금</span><span
+                        class="cal-day-label">토</span>
+                </div>
+                <div class="cal-days" id="calGrid"></div>
+            </div>
+
+            <div class="bottom-bar">
+                <button class="btn btn-primary" style="width:100%" id="btnNext1" disabled onclick="goStep(2)">날짜를 선택해
+                    주세요</button>
+                <div class="admin-link"><button onclick="showScreen('screen-admin-login')">🔒 관리자</button></div>
+            </div>
+
+            <div class="features">
+                <span class="feature-tag">합리적인 금액</span>
+                <span class="feature-tag">적재물 보험 가입</span>
+                <span class="feature-tag">전국 네트워크망</span>
+                <span class="feature-tag">카드·현금영수증·세금계산서</span>
+            </div>
+        </div>
+
+        <!-- ========== Screen 2: Transport Info ========== -->
+        <div class="screen" id="screen-transport">
+            <div class="top-bar"><button class="back-btn" onclick="goStep(1)">‹ 이전</button><span class="top-title">운송
+                    정보</span><span></span></div>
+            <div class="step-bar"><span class="step-dot done"></span><span class="step-line done"></span><span
+                    class="step-dot active"></span><span class="step-line"></span><span class="step-dot"></span></div>
+
+            <div class="card">
+                <div class="info-row"><span class="label">📅 상차일</span><span class="value" id="dispDate"></span></div>
+            </div>
+
+            <div class="section-title"><span class="icon">🚛</span> 차량 대수</div>
+            <div class="toggle-group" id="carCountToggle">
+                <button class="toggle-btn active" data-count="1" onclick="setCarCount(1)">1대 운송</button>
+                <button class="toggle-btn" data-count="2" onclick="setCarCount(2)">2대 운송</button>
+            </div>
+            <p id="discountNote" style="font-size:11px;color:var(--success);margin-top:6px;display:none">💰 2대 동시 운송 시
+                10% 할인 적용!</p>
+
+            <div class="section-title"><span class="icon">📍</span> 상차지 (출발지)</div>
+            <div class="addr-wrap">
+                <input class="input-field" id="addrFrom" placeholder="도로명, 지번, 건물명으로 검색" autocomplete="off"
+                    oninput="debounceSearch(this,'from')">
+                <div class="addr-dropdown" id="dropFrom"></div>
+            </div>
+
+            <div class="section-title"><span class="icon">📍</span> 하차지 (도착지)</div>
+            <div class="addr-wrap">
+                <input class="input-field" id="addrTo" placeholder="도로명, 지번, 건물명으로 검색" autocomplete="off"
+                    oninput="debounceSearch(this,'to')">
+                <div class="addr-dropdown" id="dropTo"></div>
+            </div>
+
+            <div class="loading" id="distLoading">
+                <div class="spinner"></div>거리 계산 중...
+            </div>
+
+            <div id="priceSection" style="display:none">
+                <div class="price-box">
+                    <div class="price-label">예상 운송 요금</div>
+                    <div class="price-amount" id="priceDisplay">₩0</div>
+                    <div class="price-detail" id="priceDetail"></div>
+                    <div id="discountBadge" class="discount-badge" style="display:none">2대 할인 -10%</div>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <button class="btn btn-primary" style="width:100%" id="btnNext2" disabled onclick="goStep(3)">다음
+                    단계</button>
+            </div>
+        </div>
+
+        <!-- ========== Screen 3: Booking Details ========== -->
+        <div class="screen" id="screen-booking">
+            <div class="top-bar"><button class="back-btn" onclick="goStep(2)">‹ 이전</button><span class="top-title">예약
+                    상세</span><span></span></div>
+            <div class="step-bar"><span class="step-dot done"></span><span class="step-line done"></span><span
+                    class="step-dot done"></span><span class="step-line done"></span><span
+                    class="step-dot active"></span></div>
+
+            <div class="card" id="bookingSummary"></div>
+
+            <div class="section-title"><span class="icon">🕐</span> 상차 시간</div>
+            <div class="input-group"><label class="input-label">희망 상차 시간 *</label><input class="input-field"
+                    id="pickupTime" type="time" value="09:00"></div>
+
+            <div class="section-title"><span class="icon">🚘</span> 차량 정보</div>
+            <div class="input-group"><label class="input-label">차종 *</label><input class="input-field" id="vehicleType"
+                    placeholder="예: 승용차, SUV, 카라반, 슈퍼카, 중장비"></div>
+            <div class="input-group"><label class="input-label">차량 번호 *</label><input class="input-field" id="plateNum"
+                    placeholder="예: 12가 3456"></div>
+            <div class="input-group"><label class="input-label">차대번호 (VIN)</label><input class="input-field" id="vinNum"
+                    placeholder="차대번호 입력 (선택)"></div>
+
+            <div class="section-title"><span class="icon">👤</span> 고객 정보</div>
+            <div class="input-group"><label class="input-label">이름 *</label><input class="input-field" id="custName"
+                    placeholder="이름 입력"></div>
+            <div class="input-group"><label class="input-label">연락처 *</label><input class="input-field" id="custPhone"
+                    type="tel" placeholder="010-0000-0000" oninput="formatPhone(this)"></div>
+
+            <div class="section-title"><span class="icon">💳</span> 결제 수단</div>
+            <div class="chip-group" id="payChips">
+                <button class="chip" data-pay="카드" onclick="selectPay(this)">카드</button>
+                <button class="chip" data-pay="현금영수증" onclick="selectPay(this)">현금영수증</button>
+                <button class="chip" data-pay="세금계산서" onclick="selectPay(this)">세금계산서</button>
+                <button class="chip" data-pay="현금" onclick="selectPay(this)">현금</button>
+            </div>
+
+            <div class="section-title"><span class="icon">📝</span> 메모</div>
+            <div class="input-group"><textarea class="input-field" id="memo" placeholder="특이사항이 있으면 입력해 주세요"></textarea>
+            </div>
+
+            <div class="bottom-bar">
+                <button class="btn btn-primary" style="width:100%" onclick="submitBooking()">예약 신청</button>
+            </div>
+        </div>
+
+        <!-- ========== Screen 4: Booking Complete ========== -->
+        <div class="screen" id="screen-complete">
+            <div class="success-icon"><svg viewBox="0 0 40 40" fill="none">
+                    <path d="M10 20 L17 27 L30 13" stroke="#0a1628" stroke-width="3.5" stroke-linecap="round"
+                        stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="100"
+                        style="animation:drawCheck .6s .3s ease forwards" />
+                </svg></div>
+            <div class="success-title">예약이 접수되었습니다</div>
+            <div class="success-sub">관리자 확인 후 승인 안내 드리겠습니다</div>
+
+            <div class="card" id="completeSummary"></div>
+
+            <a href="tel:01044430032" class="contact-link">📞 담당자 연락 010.4443.0032</a>
+
+            <div class="features" style="margin-top:16px">
+                <span class="feature-tag">합리적인 금액</span>
+                <span class="feature-tag">적재물 보험 가입</span>
+                <span class="feature-tag">다양한 차량 운송</span>
+                <span class="feature-tag">보세운송차량 등록</span>
+                <span class="feature-tag">실시간 배차</span>
+            </div>
+
+            <div class="bottom-bar">
+                <button class="btn btn-primary" style="width:100%" onclick="resetBooking()">새 예약하기</button>
+            </div>
+        </div>
+
+        <!-- ========== Admin Login ========== -->
+        <div class="screen" id="screen-admin-login">
+            <div class="top-bar"><button class="back-btn" onclick="showScreen('screen-main')">‹
+                    돌아가기</button><span></span><span></span></div>
+            <div class="admin-login-box">
+                <svg class="logo-svg" viewBox="0 0 52 44" style="display:block">
+                    <use href="#tm" fill="url(#stripes)" />
+                    <rect width="52" height="44" fill="url(#stripes)" mask="url(#tm)" />
+                    <text x="2" y="36" font-family="Outfit" font-weight="800" font-size="42" fill="none"
+                        stroke="url(#gGold)" stroke-width="0.8" letter-spacing="-2">YJ</text>
+                </svg>
+                <h2 style="color:var(--gold-l);font-size:18px;margin-bottom:24px">관리자 로그인</h2>
+                <div class="input-group"><input class="input-field" id="adminPw" type="password" placeholder="비밀번호 입력"
+                        style="text-align:center" onkeydown="if(event.key==='Enter')adminLogin()"></div>
+                <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">로그인</button>
+            </div>
+        </div>
+
+        <!-- ========== Admin Dashboard ========== -->
+        <div class="screen" id="screen-admin">
+            <div class="top-bar"><button class="back-btn" onclick="adminLogout()">‹ 로그아웃</button><span
+                    class="top-title">관리자</span><span></span></div>
+            <div class="admin-tabs">
+                <div class="admin-tab active" data-tab="tab-bookings" onclick="switchTab(this)">📋 예약</div>
+                <div class="admin-tab" data-tab="tab-holidays" onclick="switchTab(this)">📅 휴무</div>
+                <div class="admin-tab" data-tab="tab-settings" onclick="switchTab(this)">💰 요금</div>
+            </div>
+
+            <!-- Bookings Tab -->
+            <div class="tab-pane active" id="tab-bookings">
+                <div class="filter-bar" id="filterBar">
+                    <button class="filter-chip active" data-filter="all" onclick="filterBookings(this)">전체</button>
+                    <button class="filter-chip" data-filter="pending" onclick="filterBookings(this)">⏳ 대기</button>
+                    <button class="filter-chip" data-filter="approved" onclick="filterBookings(this)">✅ 승인</button>
+                    <button class="filter-chip" data-filter="rejected" onclick="filterBookings(this)">❌ 거절</button>
+                </div>
+                <div id="bookingsList"></div>
+            </div>
+
+            <!-- Holidays Tab -->
+            <div class="tab-pane" id="tab-holidays">
+                <div class="cal-wrap">
+                    <div class="cal-header">
+                        <button class="cal-nav" onclick="changeAdminMonth(-1)">‹</button>
+                        <span class="cal-title" id="adminCalTitle"></span>
+                        <button class="cal-nav" onclick="changeAdminMonth(1)">›</button>
+                    </div>
+                    <div class="cal-days"><span class="cal-day-label">일</span><span class="cal-day-label">월</span><span
+                            class="cal-day-label">화</span><span class="cal-day-label">수</span><span
+                            class="cal-day-label">목</span><span class="cal-day-label">금</span><span
+                            class="cal-day-label">토</span></div>
+                    <div class="cal-days" id="adminCalGrid"></div>
+                </div>
+                <p style="font-size:12px;color:var(--txt3);text-align:center;margin-top:10px">날짜를 클릭하여 휴무일을 설정/해제합니다</p>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane" id="tab-settings">
+                <div class="settings-section">
+                    <h3>💰 요금 계산 방식</h3>
+                    <div class="toggle-group" id="priceModeToggle" style="margin-bottom:12px">
+                        <button class="toggle-btn active" data-mode="table" onclick="setPriceMode('table')">요금표
+                            기준</button>
+                        <button class="toggle-btn" data-mode="custom" onclick="setPriceMode('custom')">직접 설정</button>
+                    </div>
+                    <div id="customPriceFields" style="display:none">
+                        <div class="input-group"><label class="input-label">기본료 (원)</label><input class="input-field"
+                                id="setBaseFee" type="number" placeholder="0"></div>
+                        <div class="settings-row">
+                            <div class="input-group"><label class="input-label">km당 단가 (1대)</label><input
+                                    class="input-field" id="setRate1" type="number" placeholder="1000"></div>
+                            <div class="input-group"><label class="input-label">km당 단가 (2대)</label><input
+                                    class="input-field" id="setRate2" type="number" placeholder="900"></div>
+                        </div>
+                    </div>
+                    <div id="tablePriceInfo">
+                        <p style="font-size:12px;color:var(--txt2);margin-bottom:6px">기본 요금표가 자동 적용됩니다.</p>
+                        <p style="font-size:12px;color:var(--success)">2대 운송 시 10% 할인 적용</p>
+                    </div>
+                    <div class="input-group" style="margin-top:12px"><label class="input-label">2대 할인율 (%)</label><input
+                            class="input-field" id="setDiscount" type="number" value="10" placeholder="10"></div>
+                </div>
+
+
+
+                <div class="settings-section">
+                    <h3>🗺️ TMAP API 설정</h3>
+                    <div class="input-group"><label class="input-label">TMAP appKey</label><input class="input-field"
+                            id="setTmapKey" placeholder="SK Open API에서 발급받은 appKey"></div>
+                    <p style="font-size:11px;color:var(--txt3);margin-top:4px">openapi.sk.com에서 TMAP API 앱 등록 후 appKey를
+                        입력하세요</p>
+                </div>
+
+                <div class="settings-section">
+                    <h3>☁️ Supabase 설정 (데이터 동기화)</h3>
+                    <div class="input-group"><label class="input-label">Project URL</label><input class="input-field"
+                            id="setSupaUrl" placeholder="https://xxxxx.supabase.co"></div>
+                    <div class="input-group"><label class="input-label">anon Key</label><input class="input-field"
+                            id="setSupaKey" placeholder="eyJhbGciOi..."></div>
+                    <p style="font-size:11px;color:var(--txt3);margin-top:4px">Supabase 연결 시 모든 기기에서 예약을 공유합니다</p>
+                    <button class="btn btn-success btn-sm" style="margin-top:8px;width:100%" onclick="testSupabase()">연결
+                        테스트</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🔑 비밀번호 변경</h3>
+                    <div class="input-group"><label class="input-label">새 비밀번호</label><input class="input-field"
+                            id="setNewPw" type="password" placeholder="새 비밀번호"></div>
+                    <div class="input-group"><label class="input-label">비밀번호 확인</label><input class="input-field"
+                            id="setNewPw2" type="password" placeholder="비밀번호 확인"></div>
+                </div>
+
+                <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">설정 저장</button>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script>
+        // ==================== STATE ====================
+        const S = {
+            selectedDate: null,
+            carCount: 1,
+            fromAddr: null, fromLat: null, fromLng: null,
+            toAddr: null, toLat: null, toLng: null,
+            distance: null,
+            price: null,
+            payMethod: null,
+            calYear: new Date().getFullYear(),
+            calMonth: new Date().getMonth(),
+            adminCalYear: new Date().getFullYear(),
+            adminCalMonth: new Date().getMonth(),
+            adminFilter: 'all'
+        };
+
+        // ==================== PRICING TABLE ====================
+        const PRICE_TABLE = [
+            [10, 60000], [15, 70000], [20, 75000], [25, 80000], [30, 85000], [35, 90000],
+            [40, 100000], [45, 110000], [50, 120000], [55, 130000], [60, 140000],
+            [70, 150000], [80, 170000], [90, 180000], [100, 190000],
+            [110, 200000], [120, 210000], [130, 220000], [140, 230000], [150, 240000],
+            [160, 250000], [170, 260000], [180, 270000], [190, 280000], [200, 290000],
+            [210, 300000], [220, 310000], [230, 320000], [240, 330000], [250, 340000],
+            [260, 350000], [270, 360000], [280, 370000], [290, 380000], [300, 390000],
+            [320, 400000], [340, 410000], [360, 420000], [380, 430000], [400, 440000],
+            [Infinity, 450000]
+        ];
+
+        // ==================== DATA LAYER (Supabase + localStorage fallback) ====================
+        function loadLocal(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch (e) { return def; } }
+        function saveLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+        // Supabase client (lazy init)
+        let _supa = null;
+        function getSupa() {
+            if (_supa) return _supa;
+            const s = getSettings();
+            if (s.supaUrl && s.supaKey && typeof supabase !== 'undefined') {
+                try {
+                    _supa = supabase.createClient(s.supaUrl, s.supaKey);
+                    return _supa;
+                } catch (e) { console.warn('Supabase init failed:', e); }
+            }
+            return null;
+        }
+        function resetSupa() { _supa = null; }
+
+        function getSettings() {
+            return loadLocal('yj_settings', {
+                password: 'dudwnghkdlxld',
+                priceMode: 'table',
+                baseFee: 0, rate1: 1000, rate2: 900,
+                discount2: 10,
+                tmapKey: 'uDHCTPuxp34c0yrZjtoOR2KPE9LBmTDU19Z0euOL',
+                supaUrl: 'https://ysfpxisagfdriatkfhuf.supabase.co',
+                supaKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZnB4aXNhZ2ZkcmlhdGtmaHVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjI1OTksImV4cCI6MjA4ODE5ODU5OX0.6fov4cP5XedO7aM7OeNUc1Zuzsbvj1hf9Een8sTipk8'
+            });
+        }
+
+        // Async data functions with Supabase
+        async function getReservationsAsync() {
+            const sb = getSupa();
+            if (sb) {
+                try {
+                    const { data, error } = await sb.from('reservations').select('*').order('created_at', { ascending: false });
+                    if (!error && data) return data;
+                } catch (e) { console.warn('Supabase reservations fetch failed:', e); }
+            }
+            return loadLocal('yj_reservations', []);
+        }
+
+        async function saveReservation(booking) {
+            // Always save locally
+            const local = loadLocal('yj_reservations', []);
+            local.push(booking);
+            saveLocal('yj_reservations', local);
+            // Try Supabase
+            const sb = getSupa();
+            if (sb) {
+                try {
+                    await sb.from('reservations').insert({
+                        id: booking.id, date: booking.date, car_count: booking.carCount,
+                        vehicle_type: booking.vehicleType, origin: booking.from, destination: booking.to,
+                        distance: booking.distance, price: booking.price, plate: booking.plate,
+                        vin: booking.vin || '', pickup_time: booking.pickupTime || '',
+                        customer_name: booking.name, customer_phone: booking.phone,
+                        pay_method: booking.payMethod, memo: booking.memo || '',
+                        status: booking.status, created_at: booking.createdAt
+                    });
+                } catch (e) { console.warn('Supabase insert failed:', e); }
+            }
+        }
+
+        async function updateBookingStatus(id, status) {
+            // Local
+            const local = loadLocal('yj_reservations', []);
+            const idx = local.findIndex(r => r.id === id);
+            if (idx >= 0) { local[idx].status = status; saveLocal('yj_reservations', local); }
+            // Supabase
+            const sb = getSupa();
+            if (sb) {
+                try { await sb.from('reservations').update({ status }).eq('id', id); } catch (e) { console.warn(e); }
+            }
+        }
+
+        async function getHolidaysAsync() {
+            const sb = getSupa();
+            if (sb) {
+                try {
+                    const { data, error } = await sb.from('holidays').select('date');
+                    if (!error && data) return data.map(h => h.date);
+                } catch (e) { console.warn(e); }
+            }
+            return loadLocal('yj_holidays', []);
+        }
+
+        async function saveHolidays(holidays) {
+            saveLocal('yj_holidays', holidays);
+            const sb = getSupa();
+            if (sb) {
+                try {
+                    await sb.from('holidays').delete().neq('date', '');
+                    if (holidays.length) {
+                        await sb.from('holidays').insert(holidays.map(d => ({ date: d })));
+                    }
+                } catch (e) { console.warn(e); }
+            }
+        }
+
+        // Sync wrappers for calendar rendering (use cached local data)
+        function getReservations() { return loadLocal('yj_reservations', []); }
+        function getHolidays() { return loadLocal('yj_holidays', []); }
+
+        async function testSupabase() {
+            const url = document.getElementById('setSupaUrl').value.trim();
+            const key = document.getElementById('setSupaKey').value.trim();
+            if (!url || !key) { showToast('URL과 Key를 입력해 주세요', 'error'); return; }
+            try {
+                const client = supabase.createClient(url, key);
+                const { data, error } = await client.from('reservations').select('id').limit(1);
+                if (error) throw error;
+                showToast('✅ Supabase 연결 성공!', 'success');
+            } catch (e) {
+                showToast('❌ 연결 실패: ' + (e.message || e), 'error');
+            }
+        }
+
+        // ==================== TOAST ====================
+        let toastTimer;
+        function showToast(msg, type = '') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + type;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.className = 'toast', 2500);
+        }
+
+        // ==================== SCREEN NAV ====================
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        function goStep(step) {
+            if (step === 1) { showScreen('screen-main'); renderCalendar(); }
+            else if (step === 2) {
+                if (!S.selectedDate) { showToast('날짜를 선택해 주세요', 'error'); return; }
+                document.getElementById('dispDate').textContent = formatDateKR(S.selectedDate);
+                showScreen('screen-transport');
+            }
+            else if (step === 3) {
+                if (!S.distance) { showToast('출발지와 도착지를 입력해 주세요', 'error'); return; }
+                renderBookingSummary();
+                showScreen('screen-booking');
+            }
+
+        }
+
+        // ==================== CALENDAR ====================
+        function renderCalendar() {
+            const y = S.calYear, m = S.calMonth;
+            document.getElementById('calTitle').textContent = `${y}년 ${m + 1}월`;
+            const grid = document.getElementById('calGrid');
+            grid.innerHTML = '';
+            const firstDay = new Date(y, m, 1).getDay();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const holidays = getHolidays();
+            const reservations = getReservations();
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += '<span class="cal-cell empty"></span>';
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dateObj = new Date(y, m, d);
+                const isPast = dateObj < today;
+                const isHoliday = holidays.includes(dateStr);
+                const isSelected = S.selectedDate === dateStr;
+                const isToday = dateObj.getTime() === today.getTime();
+                const bookCount = reservations.filter(r => r.date === dateStr).length;
+
+                let cls = 'cal-cell';
+                if (isPast) cls += ' past';
+                else if (isHoliday) cls += ' holiday';
+                if (isToday) cls += ' today';
+                if (isSelected) cls += ' selected';
+
+                const dot = bookCount > 0 ? '<span class="booking-dot"></span>' : '';
+                const clickable = !isPast && !isHoliday;
+                grid.innerHTML += `<span class="${cls}" ${clickable ? `onclick="selectDate('${dateStr}')"` : ''}>${d}${dot}</span>`;
+            }
+        }
+
+        function selectDate(dateStr) {
+            S.selectedDate = dateStr;
+            renderCalendar();
+            const btn = document.getElementById('btnNext1');
+            btn.disabled = false;
+            btn.textContent = formatDateKR(dateStr) + ' 예약하기 →';
+        }
+
+        function changeMonth(delta) {
+            S.calMonth += delta;
+            if (S.calMonth > 11) { S.calMonth = 0; S.calYear++; }
+            if (S.calMonth < 0) { S.calMonth = 11; S.calYear--; }
+            renderCalendar();
+        }
+
+        function formatDateKR(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const dow = days[new Date(+y, +m - 1, +d).getDay()];
+            return `${+m}월 ${+d}일 (${dow})`;
+        }
+
+        // ==================== CAR COUNT ====================
+        function setCarCount(n) {
+            S.carCount = n;
+            document.querySelectorAll('#carCountToggle .toggle-btn').forEach(b => {
+                b.classList.toggle('active', +b.dataset.count === n);
+            });
+            document.getElementById('discountNote').style.display = n === 2 ? 'block' : 'none';
+            if (S.distance) calculatePrice();
+        }
+
+
+
+        // ==================== PAY METHOD ====================
+        function selectPay(el) {
+            document.querySelectorAll('#payChips .chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            S.payMethod = el.dataset.pay;
+        }
+
+        // ==================== ADDRESS SEARCH (TMAP POI + Nominatim fallback) ====================
+        let searchTimers = {};
+        function debounceSearch(input, type) {
+            clearTimeout(searchTimers[type]);
+            searchTimers[type] = setTimeout(() => searchAddress(input.value, type), 400);
+        }
+
+        async function searchAddress(query, type) {
+            const dropId = type === 'from' ? 'dropFrom' : 'dropTo';
+            const drop = document.getElementById(dropId);
+            if (query.length < 2) { drop.classList.remove('show'); return; }
+
+            const settings = getSettings();
+
+            // Try TMAP POI Search first
+            if (settings.tmapKey) {
+                try {
+                    const url = `https://apis.openapi.sk.com/tmap/pois?version=1&searchKeyword=${encodeURIComponent(query)}&resCoordType=WGS84GEO&reqCoordType=WGS84GEO&count=5`;
+                    const res = await fetch(url, {
+                        headers: { 'appKey': settings.tmapKey }
+                    });
+                    const data = await res.json();
+                    if (data.searchPoiInfo && data.searchPoiInfo.pois && data.searchPoiInfo.pois.poi.length) {
+                        const pois = data.searchPoiInfo.pois.poi;
+                        drop.innerHTML = pois.map(p => {
+                            const addr = p.newAddressList?.newAddress?.[0]?.fullAddressRoad || p.upperAddrName + ' ' + p.middleAddrName + ' ' + p.lowerAddrName + ' ' + p.detailAddrName;
+                            const label = p.name + ' (' + addr.trim() + ')';
+                            const safe = label.replace(/'/g, "\\'");
+                            return `<div class="addr-item" onclick="pickAddr('${type}','${safe}',${p.noorLat},${p.noorLon})">${label}</div>`;
+                        }).join('');
+                        drop.classList.add('show');
+                        return;
+                    }
+                } catch (e) { console.warn('TMAP POI failed, trying Nominatim:', e); }
+            }
+
+            // Fallback: Nominatim
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=kr&q=${encodeURIComponent(query)}&limit=5&accept-language=ko`, {
+                    headers: { 'User-Agent': 'YJCarCarrier/1.0' }
+                });
+                const data = await res.json();
+                if (!data.length) { drop.innerHTML = '<div class="addr-item" style="color:var(--txt3)">결과 없음</div>'; drop.classList.add('show'); return; }
+                drop.innerHTML = data.map(r =>
+                    `<div class="addr-item" onclick="pickAddr('${type}','${r.display_name.replace(/'/g, "\\'")}',${r.lat},${r.lon})">${r.display_name}</div>`
+                ).join('');
+                drop.classList.add('show');
+            } catch (e) {
+                drop.innerHTML = '<div class="addr-item" style="color:var(--danger)">검색 오류</div>';
+                drop.classList.add('show');
+            }
+        }
+
+        function pickAddr(type, name, lat, lng) {
+            if (type === 'from') {
+                S.fromAddr = name; S.fromLat = lat; S.fromLng = lng;
+                document.getElementById('addrFrom').value = name;
+                document.getElementById('dropFrom').classList.remove('show');
+            } else {
+                S.toAddr = name; S.toLat = lat; S.toLng = lng;
+                document.getElementById('addrTo').value = name;
+                document.getElementById('dropTo').classList.remove('show');
+            }
+            if (S.fromLat && S.toLat) calcDistance();
+        }
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.addr-wrap')) {
+                document.querySelectorAll('.addr-dropdown').forEach(d => d.classList.remove('show'));
+            }
+        });
+
+        // ==================== DISTANCE CALC (TMAP Truck Route) ====================
+        async function calcDistance() {
+            const loading = document.getElementById('distLoading');
+            loading.classList.add('show');
+            S.distance = null;
+
+            const settings = getSettings();
+
+            // Try TMAP Truck Route API first (4.2m height)
+            if (settings.tmapKey) {
+                try {
+                    const res = await fetch('https://apis.openapi.sk.com/tmap/truck/routes?version=1&format=json', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'appKey': settings.tmapKey
+                        },
+                        body: JSON.stringify({
+                            startX: String(S.fromLng), startY: String(S.fromLat),
+                            endX: String(S.toLng), endY: String(S.toLat),
+                            reqCoordType: 'WGS84GEO', resCoordType: 'WGS84GEO',
+                            searchOption: '0',
+                            truckType: '1',
+                            truckWidth: '250', truckHeight: '420',
+                            truckWeight: '5000', truckTotalWeight: '8000',
+                            truckLength: '1200'
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.features && data.features.length) {
+                        const totalDist = data.features[0].properties.totalDistance;
+                        S.distance = Math.round(totalDist / 1000);
+                        loading.classList.remove('show');
+                        calculatePrice();
+                        return;
+                    }
+                } catch (e) { console.warn('TMAP Truck Route failed:', e); }
+            }
+
+            // Fallback: OSRM
+            try {
+                const url = `https://router.project-osrm.org/route/v1/driving/${S.fromLng},${S.fromLat};${S.toLng},${S.toLat}?overview=false`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.routes && data.routes.length) {
+                    S.distance = Math.round(data.routes[0].distance / 1000);
+                    loading.classList.remove('show');
+                    calculatePrice();
+                    return;
+                }
+            } catch (e) { console.warn('OSRM failed:', e); }
+
+            // Final fallback: Haversine × 1.4
+            S.distance = Math.round(haversine(S.fromLat, S.fromLng, S.toLat, S.toLng) * 1.4);
+            loading.classList.remove('show');
+            calculatePrice();
+        }
+
+        function haversine(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        // ==================== PRICING ====================
+        function getPriceByTable(km) {
+            for (const [maxKm, price] of PRICE_TABLE) {
+                if (km <= maxKm) return price;
+            }
+            return 450000;
+        }
+
+        function calculatePrice() {
+            if (!S.distance) return;
+            const settings = getSettings();
+            const discountRate = (settings.discount2 || 10) / 100;
+
+            let basePrice;
+            if (settings.priceMode === 'custom') {
+                const rate = S.carCount === 1 ? (settings.rate1 || 1000) : (settings.rate2 || 900);
+                basePrice = (settings.baseFee || 0) + S.distance * rate;
+            } else {
+                basePrice = getPriceByTable(S.distance);
+            }
+
+            let totalPrice;
+            let detailText;
+            if (S.carCount === 2) {
+                totalPrice = Math.round(basePrice * 2 * (1 - discountRate));
+                detailText = `${S.distance}km · 2대 운송 · ${discountRate * 100}% 할인 적용`;
+            } else {
+                totalPrice = basePrice;
+                detailText = `${S.distance}km · 1대 운송`;
+            }
+
+            S.price = totalPrice;
+            document.getElementById('priceDisplay').textContent = '₩' + totalPrice.toLocaleString();
+            document.getElementById('priceDetail').textContent = detailText;
+            document.getElementById('priceSection').style.display = 'block';
+            document.getElementById('discountBadge').style.display = S.carCount === 2 ? 'inline-block' : 'none';
+            document.getElementById('btnNext2').disabled = false;
+        }
+
+        // ==================== BOOKING SUMMARY ====================
+        function renderBookingSummary() {
+            const html = `
+    <div class="card-title">예약 요약</div>
+    <div class="info-row"><span class="label">상차일</span><span class="value">${formatDateKR(S.selectedDate)}</span></div>
+    <hr class="info-divider">
+    <div class="info-row"><span class="label">차량 대수</span><span class="value">${S.carCount}대</span></div>
+    <div class="info-row"><span class="label">출발지</span><span class="value" style="max-width:60%;font-size:13px">${S.fromAddr}</span></div>
+    <div class="info-row"><span class="label">도착지</span><span class="value" style="max-width:60%;font-size:13px">${S.toAddr}</span></div>
+    <div class="info-row"><span class="label">거리</span><span class="value">${S.distance}km</span></div>
+    <hr class="info-divider">
+    <div class="info-row"><span class="label">예상 요금</span><span class="value" style="color:var(--gold-l);font-size:18px;font-weight:700">₩${S.price.toLocaleString()}</span></div>
+  `;
+            document.getElementById('bookingSummary').innerHTML = html;
+        }
+
+        // ==================== PHONE FORMAT ====================
+        function formatPhone(input) {
+            let v = input.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length > 7) v = v.slice(0, 3) + '-' + v.slice(3, 7) + '-' + v.slice(7);
+            else if (v.length > 3) v = v.slice(0, 3) + '-' + v.slice(3);
+            input.value = v;
+        }
+
+        // ==================== SUBMIT BOOKING ====================
+        async function submitBooking() {
+            const vType = document.getElementById('vehicleType').value.trim();
+            const plate = document.getElementById('plateNum').value.trim();
+            const vin = document.getElementById('vinNum').value.trim();
+            const pickupTime = document.getElementById('pickupTime').value;
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+
+            if (!vType) { showToast('차종을 입력해 주세요', 'error'); return; }
+            if (!plate) { showToast('차량 번호를 입력해 주세요', 'error'); return; }
+            if (!pickupTime) { showToast('상차 시간을 선택해 주세요', 'error'); return; }
+            if (!name) { showToast('이름을 입력해 주세요', 'error'); return; }
+            if (!phone || phone.replace(/\D/g, '').length < 10) { showToast('올바른 연락처를 입력해 주세요', 'error'); return; }
+
+            const reservations = getReservations();
+            const dateNum = S.selectedDate.replace(/-/g, '');
+            const todayCount = reservations.filter(r => r.date === S.selectedDate).length + 1;
+            const id = `YJ-${dateNum}-${String(todayCount).padStart(3, '0')}`;
+
+            const booking = {
+                id, date: S.selectedDate,
+                carCount: S.carCount, vehicleType: vType,
+                from: S.fromAddr, to: S.toAddr, distance: S.distance,
+                price: S.price,
+                plate, vin, pickupTime,
+                name, phone,
+                payMethod: S.payMethod || '미선택',
+                memo: document.getElementById('memo').value.trim(),
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+
+            await saveReservation(booking);
+
+            // Render complete screen
+            document.getElementById('completeSummary').innerHTML = `
+    <div class="card-title">예약 정보</div>
+    <div class="info-row"><span class="label">예약번호</span><span class="value" style="color:var(--gold)">${id}</span></div>
+    <div class="info-row"><span class="label">상차일</span><span class="value">${formatDateKR(S.selectedDate)} ${pickupTime}</span></div>
+    <div class="info-row"><span class="label">차량</span><span class="value">${S.carCount}대 · ${vType}</span></div>
+    <div class="info-row"><span class="label">차량번호</span><span class="value">${plate}</span></div>
+    ${vin ? `<div class="info-row"><span class="label">차대번호</span><span class="value">${vin}</span></div>` : ''}
+    <div class="info-row"><span class="label">경로</span><span class="value" style="font-size:12px">${S.fromAddr} → ${S.toAddr}</span></div>
+    <div class="info-row"><span class="label">거리</span><span class="value">${S.distance}km</span></div>
+    <hr class="info-divider">
+    <div class="info-row"><span class="label">예상 요금</span><span class="value" style="color:var(--gold-l);font-size:18px;font-weight:700">₩${S.price.toLocaleString()}</span></div>
+    <div class="info-row"><span class="label">결제수단</span><span class="value">${booking.payMethod}</span></div>
+    <div class="info-row"><span class="label">고객</span><span class="value">${name} · ${phone}</span></div>
+  `;
+
+            showScreen('screen-complete');
+            showToast('예약이 접수되었습니다!', 'success');
+        }
+
+        // ==================== RESET ====================
+        function resetBooking() {
+            S.selectedDate = null; S.carCount = 1;
+            S.fromAddr = null; S.fromLat = null; S.fromLng = null;
+            S.toAddr = null; S.toLat = null; S.toLng = null;
+            S.distance = null; S.price = null; S.payMethod = null;
+
+            // Reset form fields
+            document.getElementById('addrFrom').value = '';
+            document.getElementById('addrTo').value = '';
+            document.getElementById('vehicleType').value = '';
+            document.getElementById('plateNum').value = '';
+            document.getElementById('vinNum').value = '';
+            document.getElementById('pickupTime').value = '09:00';
+            document.getElementById('custName').value = '';
+            document.getElementById('custPhone').value = '';
+            document.getElementById('memo').value = '';
+            document.getElementById('priceSection').style.display = 'none';
+            document.getElementById('btnNext1').disabled = true;
+            document.getElementById('btnNext1').textContent = '날짜를 선택해 주세요';
+            document.getElementById('btnNext2').disabled = true;
+            document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('#carCountToggle .toggle-btn').forEach(b => {
+                b.classList.toggle('active', +b.dataset.count === 1);
+            });
+            document.getElementById('discountNote').style.display = 'none';
+
+            showScreen('screen-main');
+            renderCalendar();
+        }
+
+        // ==================== ADMIN ====================
+        async function adminLogin() {
+            const pw = document.getElementById('adminPw').value;
+            const settings = getSettings();
+            if (pw === settings.password) {
+                document.getElementById('adminPw').value = '';
+                showScreen('screen-admin');
+                await refreshAdminData();
+                renderAdminBookings();
+                renderAdminCalendar();
+                loadSettingsUI();
+            } else {
+                showToast('비밀번호가 올바르지 않습니다', 'error');
+            }
+        }
+
+        function adminLogout() {
+            showScreen('screen-main');
+            renderCalendar();
+        }
+
+        // Admin tabs
+        function switchTab(el) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById(el.dataset.tab).classList.add('active');
+            if (el.dataset.tab === 'tab-bookings') renderAdminBookings();
+            if (el.dataset.tab === 'tab-holidays') renderAdminCalendar();
+        }
+
+        // Filter bookings
+        function filterBookings(el) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            S.adminFilter = el.dataset.filter;
+            renderAdminBookings();
+        }
+
+        // Render admin bookings
+        function renderAdminBookings() {
+            const reservations = getReservations();
+            const filtered = S.adminFilter === 'all' ? reservations : reservations.filter(r => r.status === S.adminFilter);
+            const container = document.getElementById('bookingsList');
+
+            if (!filtered.length) {
+                container.innerHTML = '<p style="text-align:center;color:var(--txt3);padding:40px 0">예약이 없습니다</p>';
+                return;
+            }
+
+            // Group by date
+            const grouped = {};
+            filtered.forEach(r => {
+                if (!grouped[r.date]) grouped[r.date] = [];
+                grouped[r.date].push(r);
+            });
+
+            // Count all bookings per date (not just filtered) for duplicate detection
+            const allByDate = {};
+            reservations.forEach(r => {
+                if (!allByDate[r.date]) allByDate[r.date] = [];
+                allByDate[r.date].push(r);
+            });
+
+            const sortedDates = Object.keys(grouped).sort().reverse();
+            let html = '';
+            sortedDates.forEach(date => {
+                const totalForDate = allByDate[date] ? allByDate[date].length : 0;
+                const dupWarning = totalForDate > 1 ? `<span class="count">⚠ 총 ${totalForDate}건</span>` : `<span class="count">${totalForDate}건</span>`;
+                html += `<div class="date-group-header">📅 ${formatDateKR(date)} ${dupWarning}</div>`;
+
+                if (totalForDate > 1) {
+                    html += `<div class="dup-badge">⚠ 중복 예약 ${totalForDate}건 — 인계 확인 필요</div>`;
+                }
+
+                grouped[date].forEach(r => {
+                    const statusLabel = { pending: '⏳ 대기', approved: '✅ 승인', rejected: '❌ 거절' }[r.status];
+                    const actions = r.status === 'pending' ? `
+        <div class="bc-actions">
+          <button class="btn btn-success btn-sm" onclick="updateBooking('${r.id}','approved')">✅ 승인</button>
+          <button class="btn btn-danger btn-sm" onclick="updateBooking('${r.id}','rejected')">❌ 거절</button>
+        </div>` : '';
+
+                    html += `
+        <div class="booking-card">
+          <div class="bc-header">
+            <span class="bc-id">${r.id}</span>
+            <span class="bc-status ${r.status}">${statusLabel}</span>
+          </div>
+          <div class="bc-name">${r.name} · ${r.phone}</div>
+          <div class="bc-route">📍 ${r.from} → ${r.to}</div>
+          <div class="bc-info">${r.carCount}대 · ${r.vehicleType || ''} · ${r.distance}km · ${r.plate}${r.pickupTime ? ' · ' + r.pickupTime : ''}</div>
+          <div class="bc-info" style="color:var(--gold)">₩${r.price.toLocaleString()} · ${r.payMethod}</div>
+          ${r.memo ? `<div class="bc-info" style="margin-top:4px">📝 ${r.memo}</div>` : ''}
+          ${actions}
+        </div>`;
+                });
+            });
+            container.innerHTML = html;
+        }
+
+        async function updateBooking(id, status) {
+            await updateBookingStatus(id, status);
+            await refreshAdminData();
+            renderAdminBookings();
+            showToast(status === 'approved' ? '승인 처리되었습니다' : '거절 처리되었습니다', 'success');
+        }
+
+        // Refresh local data from Supabase
+        async function refreshAdminData() {
+            const reservations = await getReservationsAsync();
+            saveLocal('yj_reservations', reservations.map(r => ({
+                id: r.id, date: r.date, carCount: r.car_count || r.carCount,
+                vehicleType: r.vehicle_type || r.vehicleType,
+                from: r.origin || r.from, to: r.destination || r.to,
+                distance: r.distance, price: r.price, plate: r.plate,
+                vin: r.vin || '', pickupTime: r.pickup_time || r.pickupTime || '',
+                name: r.customer_name || r.name, phone: r.customer_phone || r.phone,
+                payMethod: r.pay_method || r.payMethod, memo: r.memo || '',
+                status: r.status, createdAt: r.created_at || r.createdAt
+            })));
+            const holidays = await getHolidaysAsync();
+            saveLocal('yj_holidays', holidays);
+        }
+
+        // ==================== ADMIN CALENDAR (HOLIDAYS) ====================
+        function renderAdminCalendar() {
+            const y = S.adminCalYear, m = S.adminCalMonth;
+            document.getElementById('adminCalTitle').textContent = `${y}년 ${m + 1}월`;
+            const grid = document.getElementById('adminCalGrid');
+            grid.innerHTML = '';
+            const firstDay = new Date(y, m, 1).getDay();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const holidays = getHolidays();
+
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<span class="cal-cell empty"></span>';
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isHoliday = holidays.includes(dateStr);
+                grid.innerHTML += `<span class="cal-cell ${isHoliday ? 'holiday' : ''}" onclick="toggleHoliday('${dateStr}')" style="cursor:pointer;${isHoliday ? 'opacity:1;background:rgba(248,113,113,0.15);color:var(--danger);text-decoration:none' : ''}">${d}</span>`;
+            }
+        }
+
+        function changeAdminMonth(delta) {
+            S.adminCalMonth += delta;
+            if (S.adminCalMonth > 11) { S.adminCalMonth = 0; S.adminCalYear++; }
+            if (S.adminCalMonth < 0) { S.adminCalMonth = 11; S.adminCalYear--; }
+            renderAdminCalendar();
+        }
+
+        async function toggleHoliday(dateStr) {
+            const holidays = getHolidays();
+            const idx = holidays.indexOf(dateStr);
+            if (idx >= 0) holidays.splice(idx, 1);
+            else holidays.push(dateStr);
+            await saveHolidays(holidays);
+            renderAdminCalendar();
+            showToast(idx >= 0 ? '휴무일 해제' : '휴무일 설정', 'success');
+        }
+
+        // ==================== ADMIN SETTINGS ====================
+        function setPriceMode(mode) {
+            document.querySelectorAll('#priceModeToggle .toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.mode === mode);
+            });
+            document.getElementById('customPriceFields').style.display = mode === 'custom' ? 'block' : 'none';
+            document.getElementById('tablePriceInfo').style.display = mode === 'table' ? 'block' : 'none';
+        }
+
+        function loadSettingsUI() {
+            const s = getSettings();
+            setPriceMode(s.priceMode || 'table');
+            document.getElementById('setBaseFee').value = s.baseFee || 0;
+            document.getElementById('setRate1').value = s.rate1 || 1000;
+            document.getElementById('setRate2').value = s.rate2 || 900;
+            document.getElementById('setDiscount').value = s.discount2 ?? 10;
+            document.getElementById('setTmapKey').value = s.tmapKey || '';
+            document.getElementById('setSupaUrl').value = s.supaUrl || '';
+            document.getElementById('setSupaKey').value = s.supaKey || '';
+        }
+
+        function saveSettings() {
+            const s = getSettings();
+            const activeMode = document.querySelector('#priceModeToggle .toggle-btn.active');
+            s.priceMode = activeMode ? activeMode.dataset.mode : 'table';
+            s.baseFee = +document.getElementById('setBaseFee').value || 0;
+            s.rate1 = +document.getElementById('setRate1').value || 1000;
+            s.rate2 = +document.getElementById('setRate2').value || 900;
+            s.discount2 = +document.getElementById('setDiscount').value || 10;
+            s.tmapKey = document.getElementById('setTmapKey').value.trim();
+            s.supaUrl = document.getElementById('setSupaUrl').value.trim();
+            s.supaKey = document.getElementById('setSupaKey').value.trim();
+
+            // Password change
+            const newPw = document.getElementById('setNewPw').value;
+            const newPw2 = document.getElementById('setNewPw2').value;
+            if (newPw) {
+                if (newPw !== newPw2) { showToast('비밀번호가 일치하지 않습니다', 'error'); return; }
+                if (newPw.length < 4) { showToast('비밀번호는 4자 이상이어야 합니다', 'error'); return; }
+                s.password = newPw;
+                document.getElementById('setNewPw').value = '';
+                document.getElementById('setNewPw2').value = '';
+            }
+
+            saveLocal('yj_settings', s);
+            resetSupa(); // Re-init Supabase with new keys if changed
+            showToast('설정이 저장되었습니다', 'success');
+        }
+
+        // ==================== INIT ====================
+        async function initApp() {
+            renderCalendar();
+            // If Supabase is configured, sync data
+            const sb = getSupa();
+            if (sb) { await refreshAdminData(); renderCalendar(); }
+        }
+        initApp();
+    </script>
+</body>
+
+</html>
